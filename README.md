@@ -14,10 +14,23 @@ Microsoft has deprecated Administrative Templates. This tool handles the full mi
 
 A fully client-side web app that runs in your browser. No PowerShell required — just a local web server.
 
-You need a local HTTP server to serve the files (opening `index.html` directly won't work due to browser security restrictions). Pick any option below:
+You need a local HTTP server to serve the files (opening `index.html` directly won't work due to browser security restrictions). **You must serve from the `web` folder** — not the repo root, or you'll see a directory listing instead of the app.
+
+After cloning, the folder structure looks like this:
+```
+Intune-AdmxToSettingsCatalog-Migrator/          ← repo root
+└── Intune-AdmxToSettingsCatalog-Migrator/      ← project folder
+    └── web/                                     ← serve from HERE
+        ├── index.html
+        ├── css/
+        └── js/
+```
+
+Pick any option below to start the server:
 
 **Python** (install from [python.org](https://www.python.org/downloads/) or `winget install Python.Python.3`):
 ```bash
+# From the repo root:
 cd Intune-AdmxToSettingsCatalog-Migrator/web
 python -m http.server 8080
 # Open http://localhost:8080
@@ -27,11 +40,13 @@ python -m http.server 8080
 
 **npx** (if you have Node.js installed):
 ```bash
+# From the repo root:
 npx http-server Intune-AdmxToSettingsCatalog-Migrator/web -p 8080
 ```
 
 **PowerShell** (no extra install needed):
 ```powershell
+# From the repo root:
 cd Intune-AdmxToSettingsCatalog-Migrator/web
 Start-Process "http://localhost:8080"
 $listener = [System.Net.HttpListener]::new(); $listener.Prefixes.Add("http://localhost:8080/"); $listener.Start()
@@ -43,6 +58,7 @@ while ($listener.IsListening) { $ctx = $listener.GetContext(); $file = Join-Path
 Full migration workflow from the command line with certificate, client secret, or interactive auth.
 
 ```powershell
+# From the repo root:
 cd Intune-AdmxToSettingsCatalog-Migrator
 pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Export
 ```
