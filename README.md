@@ -10,6 +10,14 @@ Automates migration of **Administrative Templates** (ADMX) to **Settings Catalog
 
 Microsoft has deprecated Administrative Templates. This tool handles the full migration workflow: export, duplicate detection, mapping, migration, backup, and rollback.
 
+## Screenshots
+
+![Landing Page](docs/screenshots/landing.png)
+
+![Login](docs/screenshots/login.png)
+
+![Dashboard](docs/screenshots/dashboard.png)
+
 ## Two Ways to Use
 
 ### Web UI (Browser-Based)
