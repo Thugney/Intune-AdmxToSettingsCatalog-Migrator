@@ -39,6 +39,9 @@ async function runExport() {
       let assignments = [];
       try {
         assignments = await getAdmxAssignments(p.id);
+        if (assignments.length > 0) {
+          logLine('export-log', `  Found ${assignments.length} assignment(s)`);
+        }
       } catch (err) {
         warnings++;
         logLine('export-log', `WARN: Failed to get assignments for ${p.displayName}: ${err.message}`, 'warn');

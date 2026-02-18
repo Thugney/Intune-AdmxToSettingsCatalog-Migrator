@@ -51,14 +51,34 @@ function renderPolicySelector() {
         if (mapIndex[`${policy.id}|${dv.id}`]) mappedCount++;
       }
     }
-    const assignCount = (policy.assignments || []).filter(a => a && a.target).length;
+    const allAssignments = policy.assignments || [];
+    const assignCount = allAssignments.length;
+
+    // Build assignment target labels
+    const assignLabels = allAssignments.map(a => {
+      if (!a) return null;
+      const t = a.target || a;
+      const odata = t['@odata.type'] || '';
+      if (odata.includes('allDevices')) return 'All Devices';
+      if (odata.includes('allLicensedUsers')) return 'All Users';
+      if (t.groupId) return t.groupId.substring(0, 8) + '...';
+      if (a.id) return 'Group';
+      return null;
+    }).filter(Boolean);
+
+    const assignBadge = assignCount > 0
+      ? `<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">${assignCount} assignment${assignCount !== 1 ? 's' : ''}</span>`
+      : `<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-500">No assignments</span>`;
 
     html += `
       <label class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer">
         <input type="checkbox" class="migration-policy-cb rounded border-gray-300 text-brand-600 focus:ring-brand-500" data-policy-id="${escapeHtml(policy.id)}" checked>
         <div class="flex-1 min-w-0">
-          <div class="text-sm font-medium text-gray-900 truncate">${escapeHtml(policy.displayName)}</div>
-          <div class="text-xs text-gray-500">${mappedCount}/${totalCount} settings mapped &middot; ${assignCount} assignment${assignCount !== 1 ? 's' : ''}</div>
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-medium text-gray-900 truncate">${escapeHtml(policy.displayName)}</span>
+            ${assignBadge}
+          </div>
+          <div class="text-xs text-gray-500 mt-0.5">${mappedCount}/${totalCount} settings mapped${assignLabels.length > 0 ? ' &middot; Assigned to: ' + assignLabels.join(', ') : ''}</div>
         </div>
       </label>`;
   }
@@ -295,9 +315,17 @@ async function runMigration(whatIf = false) {
 }
 
 async function executeMigration() {
+  const selectedIds = getSelectedPolicyIds();
+  const selectedPolicies = (state.exportData || []).filter(p => selectedIds.has(p.id));
+  const totalAssignments = selectedPolicies.reduce((sum, p) =>
+    sum + (p.assignments || []).filter(a => a && a.target).length, 0);
+  const assignMsg = totalAssignments > 0
+    ? ` Assignments (${totalAssignments} total) will be copied to the new policies.`
+    : ' No assignments will be applied (source policies have none).';
+
   const ok = await confirm(
     'Execute Migration',
-    'This will create Settings Catalog policies in your Intune tenant. A backup will be created first. Continue?'
+    `This will create ${selectedPolicies.length} Settings Catalog policies in your Intune tenant.${assignMsg} A backup will be created first. Continue?`
   );
   if (!ok) return;
   await runMigration(false);
