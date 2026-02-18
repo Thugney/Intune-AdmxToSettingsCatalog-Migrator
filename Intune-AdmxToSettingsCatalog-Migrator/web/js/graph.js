@@ -105,7 +105,9 @@ export async function getAdmxAssignments(policyId) {
 }
 
 export async function getAdmxDefinitionValues(policyId) {
-  return graphGetPaged(`/deviceManagement/groupPolicyConfigurations/${policyId}/definitionValues`);
+  return graphGetPaged(
+    `/deviceManagement/groupPolicyConfigurations/${policyId}/definitionValues?$expand=definition($select=id,displayName,categoryPath,classType,policyType),presentationValues`
+  );
 }
 
 export async function searchSettingsCatalog(query) {
