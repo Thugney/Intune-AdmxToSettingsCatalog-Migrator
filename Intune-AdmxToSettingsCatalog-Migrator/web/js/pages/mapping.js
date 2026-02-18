@@ -1,6 +1,6 @@
 // mapping.js - Settings mapping page
 import { state, showToast, escapeHtml, downloadJson, saveState } from '../app.js';
-import { searchSettingsCatalog } from '../graph.js';
+import { searchSettingsCatalog, getSearchErrors } from '../graph.js';
 
 let activeFilter = 'all';
 
@@ -266,6 +266,15 @@ async function generateMapping() {
 
     let msg = `Mapping complete: ${highCount} high, ${medCount} medium, ${noMatch} no match`;
     if (apiErrors > 0) msg += ` (${apiErrors} API errors)`;
+
+    // Check for search errors and surface them
+    const searchErrors = getSearchErrors();
+    if (searchErrors.length > 0 && noMatch > suggestions.length * 0.5) {
+      const uniqueErrs = [...new Set(searchErrors.map(e => e.error))];
+      msg += `. Search API issues: ${uniqueErrs.slice(0, 2).join('; ')}`;
+      console.warn('Search errors:', searchErrors);
+    }
+
     showToast(msg, noMatch === suggestions.length ? 'warning' : 'success');
   } catch (error) {
     showToast('Mapping failed: ' + error.message, 'error');
