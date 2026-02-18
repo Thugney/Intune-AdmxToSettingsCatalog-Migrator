@@ -25,9 +25,7 @@ param(
   [string]$Mode,
 
   [Parameter()]
-  [string]$BackupPath,  # Used with Mode=Restore to specify which backup to restore
-
-  [switch]$WhatIf
+  [string]$BackupPath  # Used with Mode=Restore to specify which backup to restore
 )
 
 Set-StrictMode -Version Latest
@@ -76,7 +74,7 @@ $logPath = Join-Path $logDir "Invoke-Migration.log"
 # --- Main execution ---
 try {
   Write-Log -Level "INFO" -Message "=== Session Start ===" -LogPath $logPath
-  Write-Log -Level "INFO" -Message "Mode=$Mode ConfigPath=$ConfigPath WhatIf=$WhatIf AuthType=$($cfg.Auth.Type)" -LogPath $logPath
+  Write-Log -Level "INFO" -Message "Mode=$Mode ConfigPath=$ConfigPath WhatIf=$WhatIfPreference AuthType=$($cfg.Auth.Type)" -LogPath $logPath
   Write-Log -Level "INFO" -Message "PowerShell $($PSVersionTable.PSVersion) on $($PSVersionTable.OS)" -LogPath $logPath
 
   # Modes that don't need a Graph token
@@ -131,7 +129,7 @@ try {
       if (-not (Test-Path $mappingFile)) { throw "Missing mapping file: $mappingFile. Create it from mapping.suggestions.json." }
 
       # Auto-backup before migration unless WhatIf
-      if (-not $WhatIf) {
+      if (-not $WhatIfPreference) {
         Write-Log -Level "INFO" -Message "Creating automatic pre-migration backup..." -LogPath $logPath
         $backupDir = New-MkBackup -Token $token -ApiVersion $cfg.Graph.ApiVersion -OutputDir $outDir -LogPath $logPath
         Write-Log -Level "INFO" -Message "Pre-migration backup saved to: $backupDir" -LogPath $logPath
@@ -139,7 +137,7 @@ try {
 
       Invoke-MkMigration -Token $token -ApiVersion $cfg.Graph.ApiVersion -ExportFile $exportFile -MappingFile $mappingFile `
         -TargetNamePrefix $cfg.Migration.TargetNamePrefix -SourceMarkerKey $cfg.Migration.SourceMarkerKey -SkipUnmapped:$cfg.Migration.SkipUnmapped `
-        -OutManifest (Join-Path $outDir "migration.manifest.json") -LogPath $logPath -WhatIf:$WhatIf
+        -OutManifest (Join-Path $outDir "migration.manifest.json") -LogPath $logPath -WhatIf:$WhatIfPreference
     }
 
     "Rollback" {
@@ -147,13 +145,13 @@ try {
       if (-not (Test-Path $manifest)) { throw "Missing manifest: $manifest. Run Mode=Migrate first." }
 
       # Auto-backup before rollback unless WhatIf
-      if (-not $WhatIf) {
+      if (-not $WhatIfPreference) {
         Write-Log -Level "INFO" -Message "Creating automatic pre-rollback backup..." -LogPath $logPath
         $backupDir = New-MkBackup -Token $token -ApiVersion $cfg.Graph.ApiVersion -OutputDir $outDir -LogPath $logPath
         Write-Log -Level "INFO" -Message "Pre-rollback backup saved to: $backupDir" -LogPath $logPath
       }
 
-      Invoke-MkRollback -Token $token -ApiVersion $cfg.Graph.ApiVersion -ManifestFile $manifest -LogPath $logPath -WhatIf:$WhatIf
+      Invoke-MkRollback -Token $token -ApiVersion $cfg.Graph.ApiVersion -ManifestFile $manifest -LogPath $logPath -WhatIf:$WhatIfPreference
     }
 
     "Backup" {

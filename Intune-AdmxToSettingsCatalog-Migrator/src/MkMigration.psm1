@@ -91,8 +91,7 @@ function Invoke-MkMigration {
     [Parameter(Mandatory=$true)][string]$SourceMarkerKey,
     [Parameter(Mandatory=$true)][bool]$SkipUnmapped,
     [Parameter(Mandatory=$true)][string]$OutManifest,
-    [Parameter(Mandatory=$true)][string]$LogPath,
-    [switch]$WhatIf
+    [Parameter(Mandatory=$true)][string]$LogPath
   )
 
   $export = Get-Content $ExportFile -Raw | ConvertFrom-Json
@@ -123,7 +122,7 @@ function Invoke-MkMigration {
       Write-Log -Level "INFO" -Message "Found existing Settings Catalog policy for source=$sourceId -> $($existing.name) ($($existing.id))" -LogPath $LogPath
       $targetPolicy = $existing
     } else {
-      if ($PSCmdlet.ShouldProcess($targetName, "Create Settings Catalog policy") -and -not $WhatIf) {
+      if ($PSCmdlet.ShouldProcess($targetName, "Create Settings Catalog policy")) {
         Write-Log -Level "INFO" -Message "Creating Settings Catalog policy: $targetName" -LogPath $LogPath
         $targetPolicy = New-MkSettingsCatalogPolicy -Token $Token -ApiVersion $ApiVersion -DisplayName $targetName -Description $desc -Platform "windows10" -Technologies "mdm"
         $manifest.createdPolicies += [pscustomobject]@{ sourcePolicyId=$sourceId; targetPolicyId=$targetPolicy.id; targetName=$targetPolicy.name }
@@ -146,7 +145,7 @@ function Invoke-MkMigration {
     }
 
     if ($settingsToAdd.Count -gt 0) {
-      if ($PSCmdlet.ShouldProcess($targetPolicy.id, "Add $($settingsToAdd.Count) settings") -and -not $WhatIf) {
+      if ($PSCmdlet.ShouldProcess($targetPolicy.id, "Add $($settingsToAdd.Count) settings")) {
         Write-Log -Level "INFO" -Message "Adding $($settingsToAdd.Count) settings to $($targetPolicy.id)" -LogPath $LogPath
         Add-MkSettingsCatalogSettings -Token $Token -ApiVersion $ApiVersion -PolicyId $targetPolicy.id -Settings $settingsToAdd
       } else {
@@ -161,7 +160,7 @@ function Invoke-MkMigration {
     }
 
     if ($assign.Count -gt 0) {
-      if ($PSCmdlet.ShouldProcess($targetPolicy.id, "Assign policy to $($assign.Count) targets") -and -not $WhatIf) {
+      if ($PSCmdlet.ShouldProcess($targetPolicy.id, "Assign policy to $($assign.Count) targets")) {
         Write-Log -Level "INFO" -Message "Assigning policy $($targetPolicy.id) to $($assign.Count) targets" -LogPath $LogPath
         Assign-MkSettingsCatalogPolicy -Token $Token -ApiVersion $ApiVersion -PolicyId $targetPolicy.id -Assignments $assign
       } else {
@@ -180,14 +179,13 @@ function Invoke-MkRollback {
     [Parameter(Mandatory=$true)][string]$Token,
     [Parameter(Mandatory=$true)][ValidateSet("beta","v1.0")] [string]$ApiVersion,
     [Parameter(Mandatory=$true)][string]$ManifestFile,
-    [Parameter(Mandatory=$true)][string]$LogPath,
-    [switch]$WhatIf
+    [Parameter(Mandatory=$true)][string]$LogPath
   )
 
   $m = Get-Content $ManifestFile -Raw | ConvertFrom-Json
   foreach ($cp in $m.createdPolicies) {
     $id = $cp.targetPolicyId
-    if ($PSCmdlet.ShouldProcess($id, "Delete Settings Catalog policy") -and -not $WhatIf) {
+    if ($PSCmdlet.ShouldProcess($id, "Delete Settings Catalog policy")) {
       Write-Log -Level "WARN" -Message "Deleting policy created by tool: $($cp.targetName) ($id)" -LogPath $LogPath
       Remove-MkSettingsCatalogPolicy -Token $Token -ApiVersion $ApiVersion -PolicyId $id
     } else {
