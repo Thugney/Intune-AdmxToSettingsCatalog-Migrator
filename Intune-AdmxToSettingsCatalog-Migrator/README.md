@@ -311,6 +311,62 @@ src/
 
 ---
 
+## Web UI (Browser-Based Dashboard)
+
+A fully browser-based web UI is included in the `web/` directory. No server needed - it runs entirely in your browser using MSAL.js for authentication and calls Microsoft Graph directly.
+
+### Features
+- Modern dashboard with sidebar navigation
+- Interactive login via MSAL popup (no secrets needed in browser)
+- Export policies with real-time progress
+- Duplicate detection with visual conflict/consistent indicators and merge candidates
+- Mapping suggestions with confidence levels (high/medium/no match)
+- Migration execution with live log output and WhatIf preview
+- Rollback support
+- Backup management with download/delete
+
+### Setup
+
+1. **Add a SPA redirect URI** to your Azure AD app registration:
+   - Go to Azure Portal > App Registrations > your app > Authentication
+   - Add a platform: **Single-page application**
+   - Redirect URI: `http://localhost:8080` (or wherever you serve the file)
+
+2. **Serve the web folder** (any static server works):
+   ```bash
+   # Option A: Python
+   cd web && python3 -m http.server 8080
+
+   # Option B: Node.js
+   npx serve web
+
+   # Option C: Just open index.html directly (some browsers block MSAL popups from file://)
+   ```
+
+3. **Open in browser**, enter your Tenant ID and Client ID, and sign in.
+
+### Architecture
+```
+web/
+  index.html              # Main SPA shell (Tailwind CSS via CDN)
+  css/style.css           # Custom styles
+  js/
+    auth.js               # MSAL.js popup authentication
+    graph.js              # Graph API client with retry logic
+    app.js                # Navigation, state management, UI utilities
+    pages/
+      dashboard.js        # Dashboard with stats cards and policy table
+      export.js           # Export with progress bar and log output
+      duplicates.js       # Client-side duplicate analysis and filtering
+      mapping.js          # Mapping suggestions with confidence indicators
+      migration.js        # Migration execution, preview, and rollback
+      backup.js           # Backup create/list/download/delete
+```
+
+All data stays in your browser (sessionStorage/localStorage). No data is sent to third parties.
+
+---
+
 ## Limitations
 
 - Not every ADMX setting has a 1:1 Settings Catalog counterpart. The mapping report highlights unmapped settings.
@@ -319,3 +375,4 @@ src/
 - The tool does not modify or delete original ADMX policies. That must be done manually after validation.
 - Token does not auto-refresh during very long operations. For large tenants, consider running in batches.
 - Interactive auth uses delegated permissions, which are scoped to the signed-in user's access level.
+- Web UI requires a SPA redirect URI configured in your app registration.

@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intune ADMX → Settings Catalog Migrator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50:'#eff6ff', 100:'#dbeafe', 200:'#bfdbfe', 300:'#93c5fd', 400:'#60a5fa', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a' },
+            sidebar: { DEFAULT:'#0f172a', hover:'#1e293b', active:'#334155' }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="h-full bg-gray-50 text-gray-900">
+
+  <!-- ==================== LANDING PAGE ==================== -->
+  <div id="landing-page" class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
+
+    <!-- Landing Nav -->
+    <nav class="fixed top-0 left-0 right-0 z-50 transition-all duration-300" id="landing-nav">
+      <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-brand-500 flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+          </div>
+          <span class="text-white font-bold text-lg">ADMX Migrator</span>
+        </div>
+        <div class="hidden md:flex items-center gap-8">
+          <a href="#features" class="text-slate-300 hover:text-white text-sm font-medium transition">Features</a>
+          <a href="#how-it-works" class="text-slate-300 hover:text-white text-sm font-medium transition">How It Works</a>
+          <a href="#powershell" class="text-slate-300 hover:text-white text-sm font-medium transition">PowerShell CLI</a>
+          <button id="nav-get-started" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-lg transition">
+            Get Started
+          </button>
+        </div>
+        <button id="mobile-menu-btn" class="md:hidden text-white">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+      <!-- Mobile menu -->
+      <div id="mobile-menu" class="hidden md:hidden bg-slate-800/95 backdrop-blur border-t border-slate-700">
+        <div class="px-6 py-4 space-y-3">
+          <a href="#features" class="block text-slate-300 hover:text-white text-sm font-medium">Features</a>
+          <a href="#how-it-works" class="block text-slate-300 hover:text-white text-sm font-medium">How It Works</a>
+          <a href="#powershell" class="block text-slate-300 hover:text-white text-sm font-medium">PowerShell CLI</a>
+          <button class="landing-cta w-full px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-lg transition">Get Started</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-32 pb-20 px-6 overflow-hidden">
+      <!-- Background decoration -->
+      <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/4 -left-20 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-1/4 -right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-500/5 rounded-full blur-3xl"></div>
+      </div>
+
+      <div class="max-w-5xl mx-auto text-center relative z-10">
+        <!-- Deprecation badge -->
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 mb-8 landing-fade-in">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span class="text-amber-300 text-sm font-medium">Administrative Templates are deprecated in Intune</span>
+        </div>
+
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6 landing-fade-in" style="animation-delay: 0.1s">
+          Migrate to
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-cyan-400">Settings Catalog</span>
+          <br>The Easy Way
+        </h1>
+
+        <p class="text-lg sm:text-xl text-slate-300 max-w-3xl mx-auto mb-10 leading-relaxed landing-fade-in" style="animation-delay: 0.2s">
+          Convert your deprecated Intune Administrative Templates to Settings Catalog policies.
+          No manual recreation. Full backup, rollback, and duplicate detection built in.
+        </p>
+
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 landing-fade-in" style="animation-delay: 0.3s">
+          <button id="hero-get-started" class="landing-cta group px-8 py-4 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 flex items-center gap-3 text-lg">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            Launch Web App
+            <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+          <a href="#powershell" class="px-8 py-4 border border-slate-500 hover:border-slate-400 text-slate-300 hover:text-white font-semibold rounded-xl transition flex items-center gap-3 text-lg">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            PowerShell CLI
+          </a>
+        </div>
+
+        <!-- Trust indicators -->
+        <div class="mt-14 flex flex-wrap items-center justify-center gap-8 text-sm text-slate-400 landing-fade-in" style="animation-delay: 0.4s">
+          <span class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            100% Client-Side
+          </span>
+          <span class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            No Data Sent to Third Parties
+          </span>
+          <span class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            Full Rollback Support
+          </span>
+          <span class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+            Open Source
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-24 px-6 relative">
+      <div class="max-w-7xl mx-auto">
+        <div class="text-center mb-16">
+          <span class="text-brand-400 text-sm font-semibold uppercase tracking-wider">Features</span>
+          <h2 class="text-3xl sm:text-4xl font-bold text-white mt-3 mb-4">Everything You Need for a Smooth Migration</h2>
+          <p class="text-slate-400 text-lg max-w-2xl mx-auto">A complete toolkit to move from Administrative Templates to Settings Catalog, whether you prefer a visual dashboard or the command line.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Feature 1: Export -->
+          <div class="feature-card group bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-7 hover:bg-slate-800/80 hover:border-brand-500/30 transition-all duration-300">
+            <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-5 group-hover:bg-blue-500/20 transition">
+              <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">Policy Export</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">Export all your ADMX policies with settings, assignments, and filters in one click. Full JSON output for audit trails.</p>
+          </div>
+
+          <!-- Feature 2: Duplicate Detection -->
+          <div class="feature-card group bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-7 hover:bg-slate-800/80 hover:border-amber-500/30 transition-all duration-300">
+            <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-5 group-hover:bg-amber-500/20 transition">
+              <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">Duplicate Detection</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">Find duplicate and conflicting settings across policies before migrating. Identifies merge candidates and conflict resolution paths.</p>
+          </div>
+
+          <!-- Feature 3: Smart Mapping -->
+          <div class="feature-card group bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-7 hover:bg-slate-800/80 hover:border-purple-500/30 transition-all duration-300">
+            <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-5 group-hover:bg-purple-500/20 transition">
+              <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">Smart Mapping</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">Auto-generates mapping suggestions with confidence levels (high, medium, none). Searches the Settings Catalog API for each ADMX setting.</p>
+          </div>
+
+          <!-- Feature 4: One-Click Migration -->
+          <div class="feature-card group bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-7 hover:bg-slate-800/80 hover:border-green-500/30 transition-all duration-300">
+            <div class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center mb-5 group-hover:bg-green-500/20 transition">
+              <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">One-Click Migration</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">Creates Settings Catalog policies from your mapping with assignments and filters re-applied. Idempotent - won't create duplicates if re-run.</p>
+          </div>
+
+          <!-- Feature 5: WhatIf Preview -->
+          <div class="feature-card group bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-7 hover:bg-slate-800/80 hover:border-cyan-500/30 transition-all duration-300">
+            <div class="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center mb-5 group-hover:bg-cyan-500/20 transition">
+              <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">WhatIf Preview</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">Preview exactly what will be created before making any changes. See every policy, setting, and assignment in dry-run mode.</p>
+          </div>
+
+          <!-- Feature 6: Backup & Rollback -->
+          <div class="feature-card group bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-7 hover:bg-slate-800/80 hover:border-red-500/30 transition-all duration-300">
+            <div class="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center mb-5 group-hover:bg-red-500/20 transition">
+              <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">Backup & Rollback</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">Automatic snapshots before every migration. One-click rollback deletes only the policies this tool created - nothing else is touched.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="py-24 px-6 bg-slate-900/50">
+      <div class="max-w-5xl mx-auto">
+        <div class="text-center mb-16">
+          <span class="text-brand-400 text-sm font-semibold uppercase tracking-wider">How It Works</span>
+          <h2 class="text-3xl sm:text-4xl font-bold text-white mt-3 mb-4">Five Steps to a Complete Migration</h2>
+          <p class="text-slate-400 text-lg max-w-2xl mx-auto">Whether you use the web dashboard or PowerShell CLI, the workflow is the same.</p>
+        </div>
+
+        <div class="space-y-6">
+          <!-- Step 1 -->
+          <div class="flex items-start gap-6 group">
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-brand-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-brand-500/20">1</div>
+            <div class="flex-1 bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 group-hover:border-brand-500/30 transition-all">
+              <h3 class="text-white font-semibold text-lg mb-1">Export</h3>
+              <p class="text-slate-400 text-sm">Connect to your tenant and export all ADMX policies with their settings, assignments, and filters.</p>
+            </div>
+          </div>
+          <!-- Step 2 -->
+          <div class="flex items-start gap-6 group">
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-amber-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-amber-500/20">2</div>
+            <div class="flex-1 bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 group-hover:border-amber-500/30 transition-all">
+              <h3 class="text-white font-semibold text-lg mb-1">Detect Duplicates</h3>
+              <p class="text-slate-400 text-sm">Scan for duplicate and conflicting settings across your policies. Resolve conflicts before migrating.</p>
+            </div>
+          </div>
+          <!-- Step 3 -->
+          <div class="flex items-start gap-6 group">
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-purple-500/20">3</div>
+            <div class="flex-1 bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 group-hover:border-purple-500/30 transition-all">
+              <h3 class="text-white font-semibold text-lg mb-1">Map Settings</h3>
+              <p class="text-slate-400 text-sm">Auto-generate mapping suggestions from ADMX to Settings Catalog. Review and curate the mapping.</p>
+            </div>
+          </div>
+          <!-- Step 4 -->
+          <div class="flex items-start gap-6 group">
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-cyan-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-cyan-500/20">4</div>
+            <div class="flex-1 bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 group-hover:border-cyan-500/30 transition-all">
+              <h3 class="text-white font-semibold text-lg mb-1">Preview & Migrate</h3>
+              <p class="text-slate-400 text-sm">Use WhatIf mode to preview, then execute. Settings Catalog policies are created with assignments applied.</p>
+            </div>
+          </div>
+          <!-- Step 5 -->
+          <div class="flex items-start gap-6 group">
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-green-500/20">5</div>
+            <div class="flex-1 bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 group-hover:border-green-500/30 transition-all">
+              <h3 class="text-white font-semibold text-lg mb-1">Validate & Clean Up</h3>
+              <p class="text-slate-400 text-sm">Verify the new policies in the Intune portal. If anything is wrong, one-click rollback deletes only what the tool created.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PowerShell Section -->
+    <section id="powershell" class="py-24 px-6">
+      <div class="max-w-5xl mx-auto">
+        <div class="text-center mb-12">
+          <span class="text-brand-400 text-sm font-semibold uppercase tracking-wider">PowerShell CLI</span>
+          <h2 class="text-3xl sm:text-4xl font-bold text-white mt-3 mb-4">Prefer the Command Line?</h2>
+          <p class="text-slate-400 text-lg max-w-2xl mx-auto">The same full migration workflow is available as a PowerShell CLI with certificate auth, client secret, or device code flow.</p>
+        </div>
+
+        <div class="bg-slate-800/60 border border-slate-700/50 rounded-2xl overflow-hidden">
+          <div class="flex items-center gap-2 px-4 py-3 bg-slate-900/80 border-b border-slate-700/50">
+            <span class="w-3 h-3 rounded-full bg-red-500/80"></span>
+            <span class="w-3 h-3 rounded-full bg-yellow-500/80"></span>
+            <span class="w-3 h-3 rounded-full bg-green-500/80"></span>
+            <span class="ml-3 text-slate-500 text-xs font-mono">PowerShell 7+</span>
+          </div>
+          <pre class="p-6 overflow-x-auto font-mono text-sm leading-relaxed"><code class="text-green-400"><span class="text-slate-500"># 1. Export your ADMX policies</span>
+pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Export
+
+<span class="text-slate-500"># 2. Check for duplicates</span>
+pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Duplicates
+
+<span class="text-slate-500"># 3. Generate mapping suggestions</span>
+pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Map
+
+<span class="text-slate-500"># 4. Preview migration (dry run)</span>
+pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Migrate -WhatIf
+
+<span class="text-slate-500"># 5. Execute migration</span>
+pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Migrate</code></pre>
+        </div>
+
+        <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-slate-800/40 border border-slate-700/50 rounded-xl p-5 text-center">
+            <p class="text-2xl font-bold text-white">3</p>
+            <p class="text-slate-400 text-sm mt-1">Auth Methods</p>
+            <p class="text-slate-500 text-xs mt-1">Secret, Certificate, Interactive</p>
+          </div>
+          <div class="bg-slate-800/40 border border-slate-700/50 rounded-xl p-5 text-center">
+            <p class="text-2xl font-bold text-white">7</p>
+            <p class="text-slate-400 text-sm mt-1">Operation Modes</p>
+            <p class="text-slate-500 text-xs mt-1">Export, Map, Migrate, Rollback, ...</p>
+          </div>
+          <div class="bg-slate-800/40 border border-slate-700/50 rounded-xl p-5 text-center">
+            <p class="text-2xl font-bold text-white">0</p>
+            <p class="text-slate-400 text-sm mt-1">External Dependencies</p>
+            <p class="text-slate-500 text-xs mt-1">Pure PowerShell 7+ only</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-24 px-6 bg-gradient-to-t from-slate-900 via-blue-950/50 to-transparent">
+      <div class="max-w-3xl mx-auto text-center">
+        <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">Ready to Migrate?</h2>
+        <p class="text-slate-400 text-lg mb-10">Sign in with your Microsoft account and start converting your Administrative Templates in minutes.</p>
+        <button id="cta-get-started" class="landing-cta group px-10 py-4 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 flex items-center gap-3 text-lg mx-auto">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+          Get Started Free
+          <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+        <p class="text-slate-500 text-sm mt-4">No account required. No data leaves your browser.</p>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 py-8 px-6">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-7 h-7 rounded-md bg-brand-500 flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+          </div>
+          <span class="text-slate-400 text-sm">ADMX to Settings Catalog Migrator</span>
+        </div>
+        <p class="text-slate-500 text-sm">Open source. MIT License.</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ==================== LOGIN SCREEN ==================== -->
+  <div id="login-screen" class="hidden min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
+    <div class="max-w-lg w-full mx-4">
+      <div class="text-center mb-8">
+        <button id="back-to-landing" class="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm mb-6 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          Back to home
+        </button>
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-500 mb-4">
+          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+        </div>
+        <h1 class="text-3xl font-bold text-white">ADMX → Settings Catalog</h1>
+        <p class="text-blue-200 mt-2">Intune Administrative Templates Migration Tool</p>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-2xl p-8">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tenant ID</label>
+            <input id="login-tenant" type="text" placeholder="00000000-0000-0000-0000-000000000000" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Client ID (App Registration)</label>
+            <input id="login-client" type="text" placeholder="00000000-0000-0000-0000-000000000000" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+          </div>
+          <button id="btn-login" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-lg transition flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+            Sign in with Microsoft
+          </button>
+          <p class="text-xs text-gray-500 text-center mt-2">
+            Uses interactive login (MSAL popup). Requires a SPA redirect URI in your app registration.
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-6 text-center">
+        <p class="text-sm text-blue-300">
+          <span class="inline-flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            Tokens stay in your browser. No data is sent to third parties.
+          </span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MAIN APP SHELL ==================== -->
+  <div id="app-shell" class="hidden h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 bg-sidebar flex flex-col flex-shrink-0">
+      <!-- Logo -->
+      <div class="px-5 py-5 flex items-center gap-3 border-b border-slate-700">
+        <div class="w-9 h-9 rounded-lg bg-brand-500 flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+        </div>
+        <div>
+          <h2 class="text-white text-sm font-bold leading-tight">ADMX Migrator</h2>
+          <p id="sidebar-tenant" class="text-slate-400 text-xs truncate max-w-[140px]">Not connected</p>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <button data-page="dashboard" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-sidebar-hover hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+          Dashboard
+        </button>
+        <button data-page="export" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-sidebar-hover hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Export Policies
+        </button>
+        <button data-page="duplicates" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-sidebar-hover hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          Duplicates
+          <span id="dup-badge" class="hidden ml-auto px-2 py-0.5 text-xs font-bold rounded-full bg-amber-500 text-white">0</span>
+        </button>
+        <button data-page="mapping" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-sidebar-hover hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          Mapping
+        </button>
+        <button data-page="migration" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-sidebar-hover hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Migrate
+        </button>
+        <button data-page="backup" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-sidebar-hover hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+          Backup
+        </button>
+      </nav>
+
+      <!-- User / Logout -->
+      <div class="px-3 py-4 border-t border-slate-700">
+        <div class="flex items-center gap-3 px-3 py-2">
+          <div class="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center text-white text-sm font-bold" id="user-avatar">?</div>
+          <div class="flex-1 min-w-0">
+            <p id="user-name" class="text-sm text-white truncate">User</p>
+            <p id="user-email" class="text-xs text-slate-400 truncate">email@domain.com</p>
+          </div>
+        </div>
+        <button id="btn-logout" class="w-full mt-2 flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-400 hover:bg-sidebar-hover hover:text-white transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Top Bar -->
+      <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
+        <div>
+          <h1 id="page-title" class="text-xl font-bold text-gray-900">Dashboard</h1>
+          <p id="page-subtitle" class="text-sm text-gray-500">Overview of your Intune ADMX policies</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="api-badge" class="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">API: beta</span>
+          <span id="status-indicator" class="flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            Connected
+          </span>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="flex-1 overflow-y-auto p-6">
+
+        <!-- ===== Dashboard Page ===== -->
+        <div id="page-dashboard" class="page">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+            <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500">ADMX Policies</p>
+                  <p id="stat-admx" class="text-3xl font-bold text-gray-900 mt-1">-</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
+                  <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500">Total Settings</p>
+                  <p id="stat-settings" class="text-3xl font-bold text-gray-900 mt-1">-</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center">
+                  <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500">Duplicates Found</p>
+                  <p id="stat-duplicates" class="text-3xl font-bold text-gray-900 mt-1">-</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
+                  <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500">Conflicts</p>
+                  <p id="stat-conflicts" class="text-3xl font-bold text-gray-900 mt-1">-</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center">
+                  <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Policies Table -->
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 class="text-lg font-semibold">ADMX Policies</h3>
+              <button id="btn-refresh-dashboard" class="px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Refresh
+              </button>
+            </div>
+            <div id="dashboard-policies-table" class="overflow-x-auto">
+              <div class="p-12 text-center text-gray-400">
+                <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <p>Click <strong>Refresh</strong> to load your ADMX policies from Intune</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Export Page ===== -->
+        <div id="page-export" class="page hidden">
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-2">Export ADMX Policies</h3>
+            <p class="text-gray-500 text-sm mb-4">Exports all Administrative Template policies with their assignments and settings from your Intune tenant. The export is saved locally in your browser and used by all subsequent steps.</p>
+            <div class="flex items-center gap-3">
+              <button id="btn-export" class="px-5 py-2.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition font-medium flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Start Export
+              </button>
+              <button id="btn-download-export" class="hidden px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Download JSON
+              </button>
+            </div>
+          </div>
+          <div id="export-progress" class="hidden mb-6">
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-gray-700">Exporting policies...</span>
+                <span id="export-progress-text" class="text-sm text-gray-500">0 / 0</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div id="export-progress-bar" class="bg-brand-600 h-2.5 rounded-full transition-all duration-300" style="width:0%"></div>
+              </div>
+              <div id="export-log" class="mt-4 max-h-64 overflow-y-auto font-mono text-xs bg-gray-900 text-green-400 rounded-lg p-4"></div>
+            </div>
+          </div>
+          <div id="export-results" class="hidden">
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
+              <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold">Exported Policies</h3>
+              </div>
+              <div id="export-table"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Duplicates Page ===== -->
+        <div id="page-duplicates" class="page hidden">
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-2">Duplicate Settings Detector</h3>
+            <p class="text-gray-500 text-sm mb-4">Scans your exported policies for duplicate or conflicting settings across administrative templates. Identifies which settings appear in multiple policies and whether they have matching or conflicting values.</p>
+            <button id="btn-analyze-duplicates" class="px-5 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition font-medium flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              Analyze Duplicates
+            </button>
+          </div>
+
+          <div id="dup-results" class="hidden space-y-6">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
+                <p class="text-sm text-gray-500">Policies Scanned</p>
+                <p id="dup-total-policies" class="text-2xl font-bold mt-1">0</p>
+              </div>
+              <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
+                <p class="text-sm text-gray-500">Duplicate Groups</p>
+                <p id="dup-total-groups" class="text-2xl font-bold mt-1 text-amber-600">0</p>
+              </div>
+              <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
+                <p class="text-sm text-gray-500">Consistent</p>
+                <p id="dup-consistent" class="text-2xl font-bold mt-1 text-green-600">0</p>
+              </div>
+              <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
+                <p class="text-sm text-gray-500">Conflicts</p>
+                <p id="dup-conflicts" class="text-2xl font-bold mt-1 text-red-600">0</p>
+              </div>
+            </div>
+
+            <!-- Duplicate Groups -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold">Duplicate Settings</h3>
+                <div class="flex gap-2">
+                  <button class="dup-filter-btn px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition" data-filter="all">All</button>
+                  <button class="dup-filter-btn px-3 py-1 text-xs rounded-full bg-red-50 text-red-700 hover:bg-red-100 transition" data-filter="conflict">Conflicts</button>
+                  <button class="dup-filter-btn px-3 py-1 text-xs rounded-full bg-green-50 text-green-700 hover:bg-green-100 transition" data-filter="consistent">Consistent</button>
+                </div>
+              </div>
+              <div id="dup-groups-list" class="divide-y divide-gray-100"></div>
+            </div>
+
+            <!-- Merge Candidates -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold">Merge Candidates</h3>
+                <p class="text-sm text-gray-500 mt-1">Policy pairs ranked by number of shared settings</p>
+              </div>
+              <div id="dup-merge-list" class="divide-y divide-gray-100"></div>
+            </div>
+
+            <div class="flex gap-3">
+              <button id="btn-download-dup-report" class="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Download Report (JSON)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Mapping Page ===== -->
+        <div id="page-mapping" class="page hidden">
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-2">Settings Mapping</h3>
+            <p class="text-gray-500 text-sm mb-4">Auto-generates mapping suggestions from your ADMX settings to Settings Catalog equivalents. Review and curate the mappings, then download the final mapping.json for migration.</p>
+            <div class="flex items-center gap-3">
+              <button id="btn-generate-mapping" class="px-5 py-2.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition font-medium flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                Generate Suggestions
+              </button>
+              <button id="btn-download-mapping" class="hidden px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Download mapping.json
+              </button>
+            </div>
+          </div>
+          <div id="mapping-progress" class="hidden mb-6">
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-gray-700">Searching Settings Catalog...</span>
+                <span id="mapping-progress-text" class="text-sm text-gray-500">0 / 0</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div id="mapping-progress-bar" class="bg-brand-600 h-2.5 rounded-full transition-all duration-300" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+          <div id="mapping-results" class="hidden">
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold">Mapping Suggestions</h3>
+                <div class="flex items-center gap-4 text-sm">
+                  <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-green-500"></span> High confidence</span>
+                  <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span> Medium</span>
+                  <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> No match</span>
+                </div>
+              </div>
+              <div id="mapping-table" class="divide-y divide-gray-100"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Migration Page ===== -->
+        <div id="page-migration" class="page hidden">
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-2">Migrate to Settings Catalog</h3>
+            <p class="text-gray-500 text-sm mb-4">Creates Settings Catalog policies from your curated mapping. Each ADMX policy becomes a new Settings Catalog policy with the mapped settings and assignments re-applied.</p>
+            <div class="flex flex-wrap items-center gap-3">
+              <button id="btn-migrate-preview" class="px-5 py-2.5 border border-brand-600 text-brand-600 rounded-lg hover:bg-brand-50 transition font-medium flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                Preview (WhatIf)
+              </button>
+              <button id="btn-migrate-execute" class="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                Execute Migration
+              </button>
+              <button id="btn-rollback" class="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                Rollback
+              </button>
+            </div>
+          </div>
+
+          <div id="migration-log-container" class="hidden">
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-lg font-semibold">Migration Log</h3>
+                <span id="migration-status" class="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">Running...</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                <div id="migration-progress-bar" class="bg-green-600 h-2.5 rounded-full transition-all duration-300" style="width:0%"></div>
+              </div>
+              <div id="migration-log" class="max-h-96 overflow-y-auto font-mono text-xs bg-gray-900 text-green-400 rounded-lg p-4"></div>
+            </div>
+          </div>
+
+          <div id="migration-manifest" class="hidden mt-6">
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold">Migration Results</h3>
+                <button id="btn-download-manifest" class="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  Download Manifest
+                </button>
+              </div>
+              <div id="manifest-table"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Backup Page ===== -->
+        <div id="page-backup" class="page hidden">
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-2">Backup & Restore</h3>
+            <p class="text-gray-500 text-sm mb-4">Create snapshots of your current ADMX and Settings Catalog policies. Backups are stored in your browser's local storage. A backup is automatically created before every migration and rollback.</p>
+            <div class="flex items-center gap-3">
+              <button id="btn-create-backup" class="px-5 py-2.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition font-medium flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                Create Backup Now
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h3 class="text-lg font-semibold">Saved Backups</h3>
+            </div>
+            <div id="backup-list">
+              <div class="p-8 text-center text-gray-400">
+                <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                <p>No backups yet. Create one before making changes.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ==================== TOAST NOTIFICATION ==================== -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+  <!-- ==================== CONFIRM MODAL ==================== -->
+  <div id="confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6">
+      <h3 id="confirm-title" class="text-lg font-bold mb-2">Confirm</h3>
+      <p id="confirm-message" class="text-gray-600 mb-6">Are you sure?</p>
+      <div class="flex justify-end gap-3">
+        <button id="confirm-cancel" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">Cancel</button>
+        <button id="confirm-ok" class="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SCRIPTS ==================== -->
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/graph.js"></script>
+  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/pages/dashboard.js"></script>
+  <script type="module" src="js/pages/export.js"></script>
+  <script type="module" src="js/pages/duplicates.js"></script>
+  <script type="module" src="js/pages/mapping.js"></script>
+  <script type="module" src="js/pages/migration.js"></script>
+  <script type="module" src="js/pages/backup.js"></script>
+</body>
+</html>
