@@ -1,8 +1,10 @@
+[![Repo](https://img.shields.io/badge/Repo-Intune--ADMX--Migrator-2088FF?style=for-the-badge&logo=github)](https://github.com/Thugney/Intune-AdmxToSettingsCatalog-Migrator)
+
+# Intune ADMX to Settings Catalog Migrator
+
 [![GitHub](https://img.shields.io/badge/GitHub-Thugney-181717?style=for-the-badge&logo=github)](https://github.com/Thugney/)
 [![X](https://img.shields.io/badge/X-@eriteach-000000?style=for-the-badge&logo=x)](https://x.com/eriteach)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-eriteach-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/eriteach/)
-
-# Intune ADMX to Settings Catalog Migrator
 
 Automates migration of **Administrative Templates** (ADMX) to **Settings Catalog** policies in Microsoft Intune.
 
