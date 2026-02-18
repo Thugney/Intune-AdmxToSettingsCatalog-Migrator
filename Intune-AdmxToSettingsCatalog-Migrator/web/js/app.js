@@ -44,44 +44,22 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function handleLogin() {
-  const tenantId = document.getElementById('login-tenant').value.trim();
-  const clientId = document.getElementById('login-client').value.trim();
-
-  if (!tenantId || !clientId) {
-    showToast('Please enter both Tenant ID and Client ID', 'error');
-    return;
-  }
-
-  // Validate GUID format
-  const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if (!guidRegex.test(tenantId)) {
-    showToast('Tenant ID must be a valid GUID', 'error');
-    return;
-  }
-  if (!guidRegex.test(clientId)) {
-    showToast('Client ID must be a valid GUID', 'error');
-    return;
-  }
-
   const btn = document.getElementById('btn-login');
   btn.disabled = true;
   btn.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Signing in...';
 
   try {
-    // Save credentials for session
-    sessionStorage.setItem('mk-tenant', tenantId);
-    sessionStorage.setItem('mk-client', clientId);
-
-    initMsal(tenantId, clientId);
+    initMsal();
     await login();
 
     const account = getAccount();
+    const tenantId = account.tenantId || '';
     showApp(account, tenantId);
     showToast('Signed in successfully', 'success');
   } catch (error) {
     showToast('Sign-in failed: ' + error.message, 'error');
     btn.disabled = false;
-    btn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg> Sign in with Microsoft';
+    btn.innerHTML = '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 21 21"><path d="M0 0h10v10H0zM11 0h10v10H11zM0 11h10v10H0zM11 11h10v10H11z"/></svg> Sign in with Microsoft';
   }
 }
 

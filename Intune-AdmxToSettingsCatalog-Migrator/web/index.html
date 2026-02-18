@@ -129,64 +129,55 @@
     <section id="features" class="py-24 px-6 relative">
       <div class="max-w-7xl mx-auto">
         <div class="text-center mb-16">
-          <span class="text-brand-400 text-sm font-semibold uppercase tracking-wider">Features</span>
+          <span class="text-brand-400 text-sm font-semibold uppercase tracking-wider">Powerful Features</span>
           <h2 class="text-3xl sm:text-4xl font-bold text-white mt-3 mb-4">Everything You Need for a Smooth Migration</h2>
           <p class="text-slate-400 text-lg max-w-2xl mx-auto">A complete toolkit to move from Administrative Templates to Settings Catalog, whether you prefer a visual dashboard or the command line.</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <!-- Feature 1: Export -->
+          <!-- Feature 1: Policy Conversion -->
           <div class="feature-card group bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-7 hover:bg-slate-800/80 hover:border-brand-500/30 transition-all duration-300">
             <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-5 group-hover:bg-blue-500/20 transition">
-              <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
             </div>
-            <h3 class="text-lg font-semibold text-white mb-2">Policy Export</h3>
-            <p class="text-slate-400 text-sm leading-relaxed">Export all your ADMX policies with settings, assignments, and filters in one click. Full JSON output for audit trails.</p>
+            <h3 class="text-lg font-semibold text-white mb-2">Policy Conversion</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">Convert Administrative Template policies to Settings Catalog format with intelligent setting mapping using Microsoft's definition search.</p>
           </div>
 
-          <!-- Feature 2: Duplicate Detection -->
-          <div class="feature-card group bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-7 hover:bg-slate-800/80 hover:border-amber-500/30 transition-all duration-300">
-            <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-5 group-hover:bg-amber-500/20 transition">
-              <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-            </div>
-            <h3 class="text-lg font-semibold text-white mb-2">Duplicate Detection</h3>
-            <p class="text-slate-400 text-sm leading-relaxed">Find duplicate and conflicting settings across policies before migrating. Identifies merge candidates and conflict resolution paths.</p>
-          </div>
-
-          <!-- Feature 3: Smart Mapping -->
-          <div class="feature-card group bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-7 hover:bg-slate-800/80 hover:border-purple-500/30 transition-all duration-300">
-            <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-5 group-hover:bg-purple-500/20 transition">
-              <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-            </div>
-            <h3 class="text-lg font-semibold text-white mb-2">Setting Search & Mapping</h3>
-            <p class="text-slate-400 text-sm leading-relaxed">Searches the Settings Catalog API for each ADMX setting by name and returns potential matches with confidence indicators (high, medium, none). You review and confirm every mapping before migration.</p>
-          </div>
-
-          <!-- Feature 4: One-Click Migration -->
-          <div class="feature-card group bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-7 hover:bg-slate-800/80 hover:border-green-500/30 transition-all duration-300">
-            <div class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center mb-5 group-hover:bg-green-500/20 transition">
-              <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            </div>
-            <h3 class="text-lg font-semibold text-white mb-2">One-Click Migration</h3>
-            <p class="text-slate-400 text-sm leading-relaxed">Creates Settings Catalog policies from your mapping with assignments and filters re-applied. Idempotent - won't create duplicates if re-run.</p>
-          </div>
-
-          <!-- Feature 5: WhatIf Preview -->
+          <!-- Feature 2: Conversion Preview -->
           <div class="feature-card group bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-7 hover:bg-slate-800/80 hover:border-cyan-500/30 transition-all duration-300">
             <div class="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center mb-5 group-hover:bg-cyan-500/20 transition">
               <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             </div>
-            <h3 class="text-lg font-semibold text-white mb-2">WhatIf Preview</h3>
-            <p class="text-slate-400 text-sm leading-relaxed">Preview exactly what will be created before making any changes. See every policy, setting, and assignment in dry-run mode.</p>
+            <h3 class="text-lg font-semibold text-white mb-2">Conversion Preview</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">Preview which settings will transfer successfully before committing. See high, medium, and low confidence matches.</p>
           </div>
 
-          <!-- Feature 6: Backup & Rollback -->
+          <!-- Feature 3: Assignment Management -->
+          <div class="feature-card group bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-7 hover:bg-slate-800/80 hover:border-green-500/30 transition-all duration-300">
+            <div class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center mb-5 group-hover:bg-green-500/20 transition">
+              <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">Assignment Management</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">View, copy, and manage policy assignments including groups (include/exclude), filters, and all-users/all-devices targeting.</p>
+          </div>
+
+          <!-- Feature 4: Scope Tags -->
+          <div class="feature-card group bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-7 hover:bg-slate-800/80 hover:border-purple-500/30 transition-all duration-300">
+            <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-5 group-hover:bg-purple-500/20 transition">
+              <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">Scope Tags</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">Manage role scope tags on converted policies. Create new scope tags or assign existing ones to control administrative visibility.</p>
+          </div>
+
+          <!-- Feature 5: Clean Up -->
           <div class="feature-card group bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-7 hover:bg-slate-800/80 hover:border-red-500/30 transition-all duration-300">
             <div class="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center mb-5 group-hover:bg-red-500/20 transition">
-              <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+              <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </div>
-            <h3 class="text-lg font-semibold text-white mb-2">Backup & Rollback</h3>
-            <p class="text-slate-400 text-sm leading-relaxed">Automatic snapshots before every migration. One-click rollback deletes only the policies this tool created - nothing else is touched.</p>
+            <h3 class="text-lg font-semibold text-white mb-2">Clean Up</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">Delete old Administrative Template policies and their assignments after successful conversion to keep your tenant tidy.</p>
           </div>
         </div>
       </div>
@@ -197,7 +188,7 @@
       <div class="max-w-5xl mx-auto">
         <div class="text-center mb-16">
           <span class="text-brand-400 text-sm font-semibold uppercase tracking-wider">How It Works</span>
-          <h2 class="text-3xl sm:text-4xl font-bold text-white mt-3 mb-4">Five Steps to a Complete Migration</h2>
+          <h2 class="text-3xl sm:text-4xl font-bold text-white mt-3 mb-4">Six Steps to a Complete Migration</h2>
           <p class="text-slate-400 text-lg max-w-2xl mx-auto">Whether you use the web dashboard or PowerShell CLI, the workflow is the same.</p>
         </div>
 
@@ -206,40 +197,48 @@
           <div class="flex items-start gap-6 group">
             <div class="flex-shrink-0 w-12 h-12 rounded-full bg-brand-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-brand-500/20">1</div>
             <div class="flex-1 bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 group-hover:border-brand-500/30 transition-all">
-              <h3 class="text-white font-semibold text-lg mb-1">Export</h3>
-              <p class="text-slate-400 text-sm">Connect to your tenant and export all ADMX policies with their settings, assignments, and filters.</p>
+              <h3 class="text-white font-semibold text-lg mb-1">Sign In</h3>
+              <p class="text-slate-400 text-sm">Click 'Sign in with Microsoft' and grant admin consent for your organization. No app registration needed.</p>
             </div>
           </div>
           <!-- Step 2 -->
           <div class="flex items-start gap-6 group">
-            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-amber-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-amber-500/20">2</div>
-            <div class="flex-1 bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 group-hover:border-amber-500/30 transition-all">
-              <h3 class="text-white font-semibold text-lg mb-1">Detect Duplicates</h3>
-              <p class="text-slate-400 text-sm">Scan for duplicate and conflicting settings across your policies. Resolve conflicts before migrating.</p>
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/20">2</div>
+            <div class="flex-1 bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 group-hover:border-blue-500/30 transition-all">
+              <h3 class="text-white font-semibold text-lg mb-1">Select</h3>
+              <p class="text-slate-400 text-sm">Browse your Administrative Template policies and select one to convert.</p>
             </div>
           </div>
           <!-- Step 3 -->
           <div class="flex items-start gap-6 group">
-            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-purple-500/20">3</div>
-            <div class="flex-1 bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 group-hover:border-purple-500/30 transition-all">
-              <h3 class="text-white font-semibold text-lg mb-1">Map Settings</h3>
-              <p class="text-slate-400 text-sm">Search the Settings Catalog API for each ADMX setting by name. Review the results, confirm or adjust matches, and build your mapping.</p>
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-cyan-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-cyan-500/20">3</div>
+            <div class="flex-1 bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 group-hover:border-cyan-500/30 transition-all">
+              <h3 class="text-white font-semibold text-lg mb-1">Preview</h3>
+              <p class="text-slate-400 text-sm">Preview the conversion to see which settings will map successfully to Settings Catalog.</p>
             </div>
           </div>
           <!-- Step 4 -->
           <div class="flex items-start gap-6 group">
-            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-cyan-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-cyan-500/20">4</div>
-            <div class="flex-1 bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 group-hover:border-cyan-500/30 transition-all">
-              <h3 class="text-white font-semibold text-lg mb-1">Preview & Migrate</h3>
-              <p class="text-slate-400 text-sm">Use WhatIf mode to preview, then execute. Settings Catalog policies are created with assignments applied.</p>
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-amber-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-amber-500/20">4</div>
+            <div class="flex-1 bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 group-hover:border-amber-500/30 transition-all">
+              <h3 class="text-white font-semibold text-lg mb-1">Check Duplicates</h3>
+              <p class="text-slate-400 text-sm">Review duplicate and conflicting settings. Merge, remove, or ignore duplicates before proceeding.</p>
             </div>
           </div>
           <!-- Step 5 -->
           <div class="flex items-start gap-6 group">
             <div class="flex-shrink-0 w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-green-500/20">5</div>
             <div class="flex-1 bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 group-hover:border-green-500/30 transition-all">
-              <h3 class="text-white font-semibold text-lg mb-1">Validate & Clean Up</h3>
-              <p class="text-slate-400 text-sm">Verify the new policies in the Intune portal. If anything is wrong, one-click rollback deletes only what the tool created.</p>
+              <h3 class="text-white font-semibold text-lg mb-1">Convert</h3>
+              <p class="text-slate-400 text-sm">Create the new Settings Catalog policy with optional assignment and scope tag transfer.</p>
+            </div>
+          </div>
+          <!-- Step 6 -->
+          <div class="flex items-start gap-6 group">
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-purple-500/20">6</div>
+            <div class="flex-1 bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 group-hover:border-purple-500/30 transition-all">
+              <h3 class="text-white font-semibold text-lg mb-1">Import & Deploy</h3>
+              <p class="text-slate-400 text-sm">Import the new policy with deployment options: pilot first, then roll out gradually, or deploy for all.</p>
             </div>
           </div>
         </div>
@@ -308,30 +307,33 @@ pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Migrate</code
           Get Started Free
           <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>
-        <p class="text-slate-500 text-sm mt-4">No account required. No data leaves your browser.</p>
+        <p class="text-slate-500 text-sm mt-4">No app registration required. No data leaves your browser.</p>
       </div>
     </section>
 
     <!-- Footer -->
     <footer class="border-t border-slate-800 py-8 px-6">
-      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <div class="w-7 h-7 rounded-md bg-brand-500 flex items-center justify-center">
-            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+      <div class="max-w-7xl mx-auto">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-7 h-7 rounded-md bg-brand-500 flex items-center justify-center">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+            </div>
+            <span class="text-slate-400 text-sm">Microsoft Cloud &amp; Enterprise Mobility Tools</span>
           </div>
-          <span class="text-slate-400 text-sm">ADMX to Settings Catalog Migrator</span>
+          <div class="flex items-center gap-4">
+            <a href="https://github.com/Thugney" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white transition" title="GitHub">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            </a>
+            <a href="https://www.linkedin.com/in/eriteach/" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white transition" title="LinkedIn">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            </a>
+            <a href="https://x.com/eriteach" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white transition" title="X (Twitter)">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+          </div>
         </div>
-        <div class="flex items-center gap-4">
-          <a href="https://github.com/Thugney" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white transition" title="GitHub">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-          </a>
-          <a href="https://www.linkedin.com/in/eriteach/" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white transition" title="LinkedIn">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-          </a>
-          <a href="https://x.com/eriteach" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white transition" title="X (Twitter)">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-          </a>
-        </div>
+        <p class="text-center text-slate-600 text-xs">Community tool provided as-is. Use at your own risk.</p>
       </div>
     </footer>
   </div>
@@ -352,31 +354,48 @@ pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Migrate</code
       </div>
 
       <div class="bg-white rounded-2xl shadow-2xl p-8">
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Tenant ID</label>
-            <input id="login-tenant" type="text" placeholder="00000000-0000-0000-0000-000000000000" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Client ID (App Registration)</label>
-            <input id="login-client" type="text" placeholder="00000000-0000-0000-0000-000000000000" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
-          </div>
-          <button id="btn-login" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-lg transition flex items-center justify-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+        <div class="space-y-5">
+          <button id="btn-login" class="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-lg transition flex items-center justify-center gap-2 text-base">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 21 21"><path d="M0 0h10v10H0zM11 0h10v10H11zM0 11h10v10H0zM11 11h10v10H11z"/></svg>
             Sign in with Microsoft
           </button>
-          <p class="text-xs text-gray-500 text-center mt-2">
-            Uses interactive login (MSAL popup). Requires a SPA redirect URI in your app registration.
-          </p>
+
+          <div class="border-t border-gray-200 pt-4">
+            <h3 class="text-sm font-semibold text-gray-700 mb-2">Admin Consent</h3>
+            <p class="text-xs text-gray-500 mb-3">When you sign in for the first time, a Global Administrator will need to consent to the following delegated permissions on behalf of your organization. This is a one-time process.</p>
+            <div class="space-y-2">
+              <div class="flex items-start gap-2">
+                <svg class="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"/></svg>
+                <p class="text-xs text-gray-600"><strong>DeviceManagementConfiguration.ReadWrite.All</strong> &mdash; Read &amp; create policies</p>
+              </div>
+              <div class="flex items-start gap-2">
+                <svg class="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"/></svg>
+                <p class="text-xs text-gray-600"><strong>Group.Read.All</strong> &mdash; Resolve group names</p>
+              </div>
+              <div class="flex items-start gap-2">
+                <svg class="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"/></svg>
+                <p class="text-xs text-gray-600"><strong>DeviceManagementRBAC.ReadWrite.All</strong> &mdash; Manage scope tags</p>
+              </div>
+            </div>
+            <p class="text-xs text-gray-400 mt-3">These permissions allow the tool to read your existing Administrative Template policies and create new Settings Catalog policies in your tenant. No app registration is required on your end.</p>
+          </div>
         </div>
       </div>
 
-      <div class="mt-6 text-center">
-        <p class="text-sm text-blue-300">
-          <span class="inline-flex items-center gap-1">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-            Tokens stay in your browser. No data is sent to third parties.
-          </span>
+      <!-- Important notice -->
+      <div class="mt-6 bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+        <h4 class="text-sm font-semibold text-amber-300 mb-2">Important - Please Read</h4>
+        <ul class="text-xs text-amber-200/80 space-y-1.5">
+          <li class="flex items-start gap-2"><span class="mt-1 w-1 h-1 rounded-full bg-amber-400 flex-shrink-0"></span>A new Settings Catalog policy will be created with matched settings</li>
+          <li class="flex items-start gap-2"><span class="mt-1 w-1 h-1 rounded-full bg-amber-400 flex-shrink-0"></span>The original Administrative Template policy will not be deleted automatically</li>
+          <li class="flex items-start gap-2"><span class="mt-1 w-1 h-1 rounded-full bg-amber-400 flex-shrink-0"></span>Some settings may not have a direct mapping and will be skipped</li>
+          <li class="flex items-start gap-2"><span class="mt-1 w-1 h-1 rounded-full bg-amber-400 flex-shrink-0"></span>Always review the new policy in the Intune portal before assigning it to groups</li>
+        </ul>
+      </div>
+
+      <div class="mt-4 text-center">
+        <p class="text-xs text-slate-500">
+          This is a free community tool provided as-is with no warranty. Use at your own risk. Always verify converted policies in your Intune portal before applying them to production environments. The authors are not responsible for any unintended changes to your tenant configuration.
         </p>
       </div>
     </div>
@@ -767,6 +786,7 @@ pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Migrate</code
   </div>
 
   <!-- ==================== SCRIPTS ==================== -->
+  <script src="js/config.js"></script>
   <script type="module" src="js/auth.js"></script>
   <script type="module" src="js/graph.js"></script>
   <script type="module" src="js/app.js"></script>

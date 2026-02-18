@@ -1,20 +1,16 @@
 // auth.js - MSAL.js authentication wrapper
-// Uses popup-based interactive login for browser SPA
-
-const AUTH_SCOPES = [
-  'DeviceManagementConfiguration.Read.All',
-  'DeviceManagementConfiguration.ReadWrite.All'
-];
+// Uses popup-based interactive login with multi-tenant /organizations/ endpoint.
+// Client ID and scopes come from config.js (loaded before this module).
 
 let msalInstance = null;
 let currentAccount = null;
 
-export function initMsal(tenantId, clientId) {
+export function initMsal() {
   const config = {
     auth: {
-      clientId: clientId,
-      authority: `https://login.microsoftonline.com/${tenantId}`,
-      redirectUri: window.location.origin + window.location.pathname,
+      clientId: APP_CONFIG.clientId,
+      authority: 'https://login.microsoftonline.com/organizations',
+      redirectUri: APP_CONFIG.redirectUri,
     },
     cache: {
       cacheLocation: 'sessionStorage',
@@ -37,7 +33,8 @@ export async function login() {
   if (!msalInstance) throw new Error('MSAL not initialized. Call initMsal first.');
 
   const loginRequest = {
-    scopes: AUTH_SCOPES
+    scopes: APP_CONFIG.scopes,
+    prompt: 'select_account'
   };
 
   try {
@@ -48,6 +45,13 @@ export async function login() {
     if (error.errorCode === 'user_cancelled') {
       throw new Error('Sign-in was cancelled. Please try again.');
     }
+    // If consent is needed, retry with consent prompt
+    if (error.errorCode === 'interaction_required' || error.errorCode === 'consent_required') {
+      const consentRequest = { scopes: APP_CONFIG.scopes, prompt: 'consent' };
+      const response = await msalInstance.loginPopup(consentRequest);
+      currentAccount = response.account;
+      return currentAccount;
+    }
     throw error;
   }
 }
@@ -56,16 +60,15 @@ export async function getToken() {
   if (!msalInstance || !currentAccount) throw new Error('Not authenticated.');
 
   const tokenRequest = {
-    scopes: AUTH_SCOPES,
+    scopes: APP_CONFIG.scopes,
     account: currentAccount
   };
 
   try {
-    // Try silent token acquisition first
     const response = await msalInstance.acquireTokenSilent(tokenRequest);
     return response.accessToken;
   } catch (error) {
-    // If silent fails (token expired), fall back to popup
+    // If silent fails (token expired or consent needed), fall back to popup
     try {
       const response = await msalInstance.acquireTokenPopup(tokenRequest);
       return response.accessToken;
