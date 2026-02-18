@@ -44,12 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function handleLogin() {
-  // Check if Client ID is configured; if not, show setup modal
-  if (!APP_CONFIG.isConfigured()) {
-    showSetupModal();
-    return;
-  }
-
   const btn = document.getElementById('btn-login');
   btn.disabled = true;
   btn.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Signing in...';
@@ -67,62 +61,6 @@ async function handleLogin() {
     btn.disabled = false;
     btn.innerHTML = '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 21 21"><path d="M0 0h10v10H0zM11 0h10v10H11zM0 11h10v10H0zM11 11h10v10H11z"/></svg> Sign in with Microsoft';
   }
-}
-
-// ==================== SETUP MODAL ====================
-function showSetupModal() {
-  const modal = document.getElementById('setup-modal');
-  const input = document.getElementById('setup-client-id');
-  const errorMsg = document.getElementById('setup-error');
-  const saveBtn = document.getElementById('setup-save');
-  const cancelBtn = document.getElementById('setup-cancel');
-  const redirectUri = document.getElementById('setup-redirect-uri');
-
-  // Show current redirect URI for the user to copy
-  if (redirectUri) {
-    redirectUri.textContent = window.location.origin + window.location.pathname;
-  }
-
-  // Clear previous state
-  input.value = '';
-  errorMsg.classList.add('hidden');
-  modal.classList.remove('hidden');
-
-  function cleanup() {
-    modal.classList.add('hidden');
-    saveBtn.removeEventListener('click', onSave);
-    cancelBtn.removeEventListener('click', onCancel);
-    input.removeEventListener('keydown', onKeydown);
-  }
-
-  function onSave() {
-    const val = input.value.trim();
-    // Basic GUID validation (8-4-4-4-12 hex)
-    const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!guidPattern.test(val)) {
-      errorMsg.classList.remove('hidden');
-      input.focus();
-      return;
-    }
-
-    APP_CONFIG.setClientId(val);
-    cleanup();
-    showToast('Client ID saved! Click Sign In to continue.', 'success');
-  }
-
-  function onCancel() {
-    cleanup();
-  }
-
-  function onKeydown(e) {
-    if (e.key === 'Enter') onSave();
-    else errorMsg.classList.add('hidden');
-  }
-
-  saveBtn.addEventListener('click', onSave);
-  cancelBtn.addEventListener('click', onCancel);
-  input.addEventListener('keydown', onKeydown);
-  input.focus();
 }
 
 function handleLogout() {
