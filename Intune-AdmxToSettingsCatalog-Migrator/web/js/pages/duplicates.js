@@ -82,6 +82,23 @@ function runDuplicateAnalysis(data) {
       if (dv.enabled === true) configuredState = 'enabled';
       else if (dv.enabled === false) configuredState = 'disabled';
 
+      // Build a value fingerprint from presentation values for deeper conflict detection
+      let valueFingerprint = configuredState;
+      if (dv.presentationValues && dv.presentationValues.length > 0) {
+        const pvParts = dv.presentationValues
+          .map(pv => {
+            const val = pv.value !== undefined ? pv.value
+              : pv.values !== undefined ? JSON.stringify(pv.values)
+              : pv.booleanValue !== undefined ? String(pv.booleanValue)
+              : pv.decimalValue !== undefined ? String(pv.decimalValue)
+              : pv.stringValue !== undefined ? pv.stringValue
+              : '';
+            return val;
+          })
+          .sort();
+        valueFingerprint += '|' + pvParts.join(',');
+      }
+
       const settingKey = defId ? `defId:${defId}` : defDisplayName ? `name:${defDisplayName.toLowerCase().trim()}` : `dvId:${dv.id}`;
 
       if (!settingIndex[settingKey]) settingIndex[settingKey] = [];
@@ -90,7 +107,8 @@ function runDuplicateAnalysis(data) {
         policyName: policy.displayName,
         definitionValueId: dv.id,
         settingName: defDisplayName,
-        configuredState
+        configuredState,
+        valueFingerprint
       });
     }
   }
@@ -103,7 +121,8 @@ function runDuplicateAnalysis(data) {
     if (occurrences.length <= 1) continue;
 
     const states = [...new Set(occurrences.map(o => o.configuredState))].sort();
-    const isConflict = states.length > 1;
+    const fingerprints = [...new Set(occurrences.map(o => o.valueFingerprint))];
+    const isConflict = states.length > 1 || fingerprints.length > 1;
     if (isConflict) conflictCount++;
 
     const settingName = (occurrences.find(o => o.settingName) || {}).settingName || key;
@@ -182,6 +201,15 @@ function showDuplicateResults() {
   document.getElementById('dup-consistent').textContent = report.summary.consistentDuplicates;
   document.getElementById('dup-conflicts').textContent = report.summary.conflicts;
 
+  // Update filter button counts
+  const filterBtns = document.querySelectorAll('.dup-filter-btn');
+  filterBtns.forEach(btn => {
+    const filter = btn.dataset.filter;
+    if (filter === 'all') btn.textContent = `All (${report.summary.duplicateGroups})`;
+    else if (filter === 'conflict') btn.textContent = `Conflicts Only (${report.summary.conflicts})`;
+    else if (filter === 'consistent') btn.textContent = `Consistent Only (${report.summary.consistentDuplicates})`;
+  });
+
   renderDuplicateGroups(report.duplicateGroups);
   renderMergeCandidates(report.mergeCandidates);
 }
@@ -217,12 +245,16 @@ function renderDuplicateGroups(groups, filter = 'all') {
               <span class="text-xs text-gray-400">in ${dup.occurrenceCount} policies</span>
             </div>
             <div class="flex flex-wrap gap-2 mt-2">
-              ${dup.policies.map(p => `
+              ${dup.policies.map(p => {
+                const fp = p.valueFingerprint || p.configuredState;
+                const hasValues = fp.includes('|');
+                const valuesLabel = hasValues ? ' + values' : '';
+                return `
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg bg-gray-100 text-gray-700">
                   ${escapeHtml(p.policyName)}
-                  <span class="px-1.5 py-0.5 rounded text-xs font-medium ${p.configuredState === 'enabled' ? 'bg-green-200 text-green-800' : p.configuredState === 'disabled' ? 'bg-red-200 text-red-800' : 'bg-gray-200 text-gray-600'}">${p.configuredState}</span>
-                </span>
-              `).join('')}
+                  <span class="px-1.5 py-0.5 rounded text-xs font-medium ${p.configuredState === 'enabled' ? 'bg-green-200 text-green-800' : p.configuredState === 'disabled' ? 'bg-red-200 text-red-800' : 'bg-gray-200 text-gray-600'}">${p.configuredState}${valuesLabel}</span>
+                </span>`;
+              }).join('')}
             </div>
           </div>
         </div>
