@@ -242,16 +242,28 @@ async function runMigration(whatIf = false) {
 
       for (const dv of (policy.definitionValues || [])) {
         const key = `${policy.id}|${dv.id}`;
-        if (mapIndex[key]) {
-          settingsToAdd.push(mapIndex[key].settingPayload);
+        const mapping = mapIndex[key];
+        if (mapping && mapping.settingPayload) {
+          settingsToAdd.push(mapping.settingPayload);
         } else {
           unmappedCount++;
           manifest.skipped.push({
             sourcePolicyId: policy.id,
             sourceDefinitionValueId: dv.id,
-            reason: 'unmapped'
+            reason: mapping ? 'no-payload' : 'unmapped'
           });
         }
+      }
+
+      // Graph API requires at least 1 setting - skip policies with none
+      if (settingsToAdd.length === 0) {
+        const dvCount = (policy.definitionValues || []).length;
+        logLine('migration-log', `SKIP: "${policy.displayName}" - 0 of ${dvCount} settings mapped (${unmappedCount} unmapped)`, 'warning');
+        manifest.skipped.push({
+          sourcePolicyId: policy.id,
+          reason: 'no-mapped-settings'
+        });
+        continue;
       }
 
       if (whatIf) {
@@ -260,12 +272,6 @@ async function runMigration(whatIf = false) {
       } else {
         logLine('migration-log', `CREATING: "${targetName}" with ${settingsToAdd.length} settings...`);
         const desc = `${policy.description || ''}\n${marker}`.trim();
-
-        // Log payload for debugging
-        if (settingsToAdd.length > 0) {
-          console.log('[Migration] Create payload settings:', JSON.stringify(settingsToAdd, null, 2));
-          logLine('migration-log', `First setting ID: ${settingsToAdd[0]?.settingInstance?.settingDefinitionId || 'unknown'}`);
-        }
 
         const newPolicy = await createSettingsCatalogPolicy(targetName, desc, settingsToAdd);
         logLine('migration-log', `Created policy: ${newPolicy.id}`);
@@ -296,7 +302,9 @@ async function runMigration(whatIf = false) {
     saveState();
 
     logLine('migration-log', `=== Migration ${mode} Complete ===`);
-    logLine('migration-log', `Created: ${manifest.createdPolicies.length} policies, Skipped: ${manifest.skipped.length} settings`);
+    const noMappedCount = manifest.skipped.filter(s => s.reason === 'no-mapped-settings').length;
+    const unmappedSettings = manifest.skipped.filter(s => s.reason === 'unmapped' || s.reason === 'no-payload').length;
+    logLine('migration-log', `Created: ${manifest.createdPolicies.length} policies | Skipped: ${noMappedCount} policies (no mapped settings) | ${unmappedSettings} individual settings unmapped`);
 
     statusEl.textContent = 'Complete';
     statusEl.className = 'px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700';
