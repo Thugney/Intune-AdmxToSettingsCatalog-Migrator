@@ -50,7 +50,7 @@ function Export-MkAdmxPolicies {
 
     $defValues = @()
     try {
-      $defValues = Get-MkGraphPaged -Token $Token -Uri "$base/groupPolicyConfigurations/$pid/definitionValues"
+      $defValues = Get-MkGraphPaged -Token $Token -Uri "$base/groupPolicyConfigurations/$pid/definitionValues?`$expand=definition(`$select=id,displayName,categoryPath,classType,policyType),presentationValues"
     }
     catch {
       $warningCount++

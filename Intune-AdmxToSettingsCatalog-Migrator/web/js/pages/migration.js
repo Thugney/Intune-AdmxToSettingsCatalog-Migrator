@@ -17,32 +17,61 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+function buildPayloadFromSuggestion(s) {
+  const defId = s.recommended.settingDefinitionId;
+  const odataType = s.recommended.odataType || s.recommended['@odata.type'] || '';
+  const sourceValues = s.sourceValues || { enabled: true };
+
+  // Simple setting (string/integer)
+  if (odataType.includes('SimpleSettingDefinition') || odataType.includes('Simple')) {
+    const val = sourceValues.stringValue || sourceValues.numberValue || '';
+    return {
+      '@odata.type': '#microsoft.graph.deviceManagementConfigurationSetting',
+      settingInstance: {
+        '@odata.type': '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance',
+        settingDefinitionId: defId,
+        simpleSettingValue: {
+          '@odata.type': typeof val === 'number'
+            ? '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+            : '#microsoft.graph.deviceManagementConfigurationStringSettingValue',
+          value: val
+        }
+      }
+    };
+  }
+
+  // Choice setting (default for ADMX-backed)
+  const choiceValue = sourceValues.enabled ? `${defId}_1` : `${defId}_0`;
+  return {
+    '@odata.type': '#microsoft.graph.deviceManagementConfigurationSetting',
+    settingInstance: {
+      '@odata.type': '#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance',
+      settingDefinitionId: defId,
+      choiceSettingValue: {
+        '@odata.type': '#microsoft.graph.deviceManagementConfigurationChoiceSettingValue',
+        value: choiceValue,
+        children: []
+      }
+    }
+  };
+}
+
 function getMappingIndex() {
   if (!state.mappingEntries || state.mappingEntries.length === 0) {
     // Try to build from suggestions
     if (state.mappingSuggestions) {
-      return state.mappingSuggestions
+      const idx = state.mappingSuggestions
         .filter(s => s.recommended)
         .reduce((acc, s) => {
           acc[`${s.sourcePolicyId}|${s.sourceDefinitionValueId}`] = {
             sourcePolicyId: s.sourcePolicyId,
             sourceDefinitionValueId: s.sourceDefinitionValueId,
             targetSettingDefinitionId: s.recommended.settingDefinitionId,
-            settingPayload: {
-              '@odata.type': '#microsoft.graph.deviceManagementConfigurationSetting',
-              settingInstance: {
-                '@odata.type': '#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance',
-                settingDefinitionId: s.recommended.settingDefinitionId,
-                choiceSettingValue: {
-                  '@odata.type': '#microsoft.graph.deviceManagementConfigurationChoiceSettingValue',
-                  value: 'enabled',
-                  children: []
-                }
-              }
-            }
+            settingPayload: buildPayloadFromSuggestion(s)
           };
           return acc;
         }, {});
+      return Object.keys(idx).length > 0 ? idx : null;
     }
     return null;
   }
