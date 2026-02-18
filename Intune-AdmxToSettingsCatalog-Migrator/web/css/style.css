@@ -1,0 +1,43 @@
+/* Custom styles beyond Tailwind */
+
+/* Smooth page transitions */
+.page { animation: fadeIn 0.15s ease-in; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Active nav button */
+.nav-btn.active { background-color: #334155; color: #fff; }
+.nav-btn.active svg { color: #60a5fa; }
+
+/* Toast notifications */
+.toast {
+  animation: slideIn 0.3s ease-out;
+  min-width: 320px;
+  max-width: 480px;
+}
+.toast.removing { animation: slideOut 0.3s ease-in forwards; }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+
+/* Log container auto-scroll */
+.log-auto-scroll { scroll-behavior: smooth; }
+
+/* Confidence dots */
+.confidence-high { background-color: #22c55e; }
+.confidence-medium { background-color: #eab308; }
+.confidence-low { background-color: #ef4444; }
+.confidence-none { background-color: #9ca3af; }
+
+/* Table hover rows */
+.table-row:hover { background-color: #f8fafc; }
+
+/* Pulse animation for loading */
+.pulse-slow { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+/* Scrollbar styling for log areas */
+.font-mono::-webkit-scrollbar { width: 6px; }
+.font-mono::-webkit-scrollbar-track { background: transparent; }
+.font-mono::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+
+/* Badge counter */
+.badge-bounce { animation: badgeBounce 0.3s ease-out; }
+@keyframes badgeBounce { 0% { transform: scale(0.5); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
