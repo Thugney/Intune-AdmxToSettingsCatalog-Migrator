@@ -39,3 +39,9 @@ See the full [README](Intune-AdmxToSettingsCatalog-Migrator/README.md) inside th
 
 - **Web UI**: Any modern browser + Azure AD app registration with SPA redirect URI
 - **PowerShell CLI**: PowerShell 7+ and Azure AD app registration with Graph API permissions
+
+## Author
+
+- [GitHub](https://github.com/Thugney/)
+- [X / Twitter](https://x.com/eriteach)
+- [LinkedIn](https://www.linkedin.com/in/eriteach/)
