@@ -111,10 +111,46 @@ export async function getAdmxDefinitionValues(policyId) {
 }
 
 export async function searchSettingsCatalog(query) {
-  return graphGet(
-    `/deviceManagement/configurationSettings?$search="${encodeURIComponent(query)}"`,
-    { 'ConsistencyLevel': 'eventual' }
-  ).then(r => r && r.value ? r.value : []).catch(() => []);
+  // Strategy 1: $search with ConsistencyLevel header
+  let results = [];
+  try {
+    const r = await graphGet(
+      `/deviceManagement/configurationSettings?$search="${encodeURIComponent(query)}"`,
+      { 'ConsistencyLevel': 'eventual' }
+    );
+    results = r && r.value ? r.value : [];
+  } catch { /* ignore */ }
+
+  if (results.length > 0) return results;
+
+  // Strategy 2: $filter with contains() on displayName
+  try {
+    const safe = query.replace(/'/g, "''");
+    const r = await graphGet(
+      `/deviceManagement/configurationSettings?$filter=contains(displayName,'${encodeURIComponent(safe)}')`
+    );
+    results = r && r.value ? r.value : [];
+  } catch { /* ignore */ }
+
+  if (results.length > 0) return results;
+
+  // Strategy 3: keyword search - try individual significant words (4+ chars) from the query
+  const words = query.split(/\s+/).filter(w => w.length >= 4 && !/^(configure|enable|disable|allow|with|from|that|this|have|been|will|your|each)$/i.test(w));
+  if (words.length >= 2) {
+    // Try pairs of the most significant words
+    const topWords = words.slice(0, 3);
+    for (let i = 0; i < topWords.length && results.length === 0; i++) {
+      try {
+        const r = await graphGet(
+          `/deviceManagement/configurationSettings?$search="${encodeURIComponent(topWords[i])}"`,
+          { 'ConsistencyLevel': 'eventual' }
+        );
+        results = r && r.value ? r.value : [];
+      } catch { /* ignore */ }
+    }
+  }
+
+  return results;
 }
 
 export async function getSettingsCatalogPolicies() {

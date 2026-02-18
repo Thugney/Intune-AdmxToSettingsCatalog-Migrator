@@ -385,9 +385,48 @@ function applyManualMapping(index, picked) {
 }
 
 // ==================== RENDER ====================
+function updateFilterCounts() {
+  const suggestions = state.mappingSuggestions || [];
+  const high = suggestions.filter(s => s.confidence === 'high').length;
+  const med = suggestions.filter(s => s.confidence === 'medium').length;
+  const none = suggestions.filter(s => s.confidence === 'none').length;
+
+  document.querySelectorAll('.mapping-filter-btn').forEach(btn => {
+    const f = btn.dataset.filter;
+    if (f === 'all') btn.textContent = `All (${suggestions.length})`;
+    else if (f === 'high') btn.textContent = `High (${high})`;
+    else if (f === 'medium') btn.textContent = `Medium (${med})`;
+    else if (f === 'none') btn.textContent = `No Match (${none})`;
+  });
+}
+
+function confirmMapping(index) {
+  const s = state.mappingSuggestions[index];
+  s.confidence = 'high';
+  saveState();
+  updateStats();
+  updateFilterCounts();
+  renderMappingTable();
+  showToast(`Confirmed: ${s.sourceSettingName}`, 'success');
+}
+
+function rejectMapping(index) {
+  const s = state.mappingSuggestions[index];
+  s.recommended = null;
+  s.candidates = [];
+  s.confidence = 'none';
+  saveState();
+  updateStats();
+  updateFilterCounts();
+  renderMappingTable();
+  showToast(`Rejected mapping for: ${s.sourceSettingName}`, 'info');
+}
+
 function renderMappingTable() {
   const container = document.getElementById('mapping-table');
   const suggestions = state.mappingSuggestions || [];
+
+  updateFilterCounts();
 
   if (suggestions.length === 0) {
     container.innerHTML = '<div class="p-8 text-center text-gray-400">No mapping suggestions generated.</div>';
@@ -451,15 +490,51 @@ function renderMappingTable() {
           : 'bg-gray-100 text-gray-500';
       const badgeText = s.confidence === 'high' ? 'Ready' : s.confidence === 'medium' ? 'Review' : 'None';
 
-      const matchHtml = s.recommended
-        ? `<div class="text-sm text-gray-900 truncate">${escapeHtml(s.recommended.displayName)}</div>
-           <div class="text-xs text-gray-400 truncate">${escapeHtml(s.recommended.settingDefinitionId)}</div>`
-        : `<div class="text-sm text-gray-400 italic">No Settings Catalog equivalent found</div>
-           <div class="text-xs text-gray-300">Click the search button to find a match manually</div>`;
+      let matchHtml;
+      if (s.recommended) {
+        matchHtml = `<div class="text-sm text-gray-900 truncate">${escapeHtml(s.recommended.displayName)}</div>
+           <div class="text-xs text-gray-400 truncate">${escapeHtml(s.recommended.settingDefinitionId)}</div>`;
+      } else {
+        const searchedQuery = s.searchQuery ? escapeHtml(s.searchQuery) : '';
+        matchHtml = `<div class="text-sm text-gray-400 italic">No match found</div>
+           <div class="text-xs text-gray-300">Searched: "${searchedQuery}"</div>`;
+      }
 
       const catPath = s.sourceCategoryPath
         ? `<div class="text-xs text-gray-400 truncate">${escapeHtml(s.sourceCategoryPath)}</div>`
         : '';
+
+      // Build action buttons based on confidence
+      let actionHtml = '';
+      if (s.confidence === 'medium') {
+        // Review items: Accept, Reject, or Change
+        actionHtml = `
+          <div class="flex items-center gap-1 justify-end">
+            <button class="mapping-row-accept px-2 py-1 text-xs font-medium rounded-lg bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 transition" data-index="${realIndex}" title="Accept this mapping">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </button>
+            <button class="mapping-row-reject px-2 py-1 text-xs font-medium rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition" data-index="${realIndex}" title="Reject — not the right match">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+            <button class="mapping-row-search px-2 py-1 text-xs font-medium rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-brand-400 hover:text-brand-600 transition" data-index="${realIndex}" title="Search for a different match">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </button>
+          </div>`;
+      } else if (s.confidence === 'none') {
+        // No match: Search manually
+        actionHtml = `
+          <button class="mapping-row-search px-2.5 py-1 text-xs font-medium rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-brand-400 hover:text-brand-600 transition" data-index="${realIndex}">
+            <svg class="w-3.5 h-3.5 inline -mt-0.5 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            Search
+          </button>`;
+      } else {
+        // High confidence: Change option
+        actionHtml = `
+          <button class="mapping-row-search px-2.5 py-1 text-xs font-medium rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-brand-400 hover:text-brand-600 transition" data-index="${realIndex}">
+            <svg class="w-3.5 h-3.5 inline -mt-0.5 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            Change
+          </button>`;
+      }
 
       html += `
         <div class="px-6 py-3 grid grid-cols-12 gap-3 items-center table-row border-b border-gray-50">
@@ -477,10 +552,7 @@ function renderMappingTable() {
             ${matchHtml}
           </div>
           <div class="col-span-2 text-right">
-            <button class="mapping-row-search px-2.5 py-1 text-xs font-medium rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-brand-400 hover:text-brand-600 transition" data-index="${realIndex}">
-              <svg class="w-3.5 h-3.5 inline -mt-0.5 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-              ${s.recommended ? 'Change' : 'Search'}
-            </button>
+            ${actionHtml}
           </div>
         </div>
       `;
@@ -493,6 +565,20 @@ function renderMappingTable() {
   container.querySelectorAll('.mapping-row-search').forEach(btn => {
     btn.addEventListener('click', () => {
       openSearchModal(parseInt(btn.dataset.index));
+    });
+  });
+
+  // Wire up accept buttons
+  container.querySelectorAll('.mapping-row-accept').forEach(btn => {
+    btn.addEventListener('click', () => {
+      confirmMapping(parseInt(btn.dataset.index));
+    });
+  });
+
+  // Wire up reject buttons
+  container.querySelectorAll('.mapping-row-reject').forEach(btn => {
+    btn.addEventListener('click', () => {
+      rejectMapping(parseInt(btn.dataset.index));
     });
   });
 }
