@@ -773,6 +773,55 @@ pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Migrate</code
   <!-- ==================== TOAST NOTIFICATION ==================== -->
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
 
+  <!-- ==================== SETUP MODAL (first-time Client ID) ==================== -->
+  <div id="setup-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-8">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-gray-900">One-Time Setup</h3>
+          <p class="text-sm text-gray-500">Register an Entra app (takes 1 minute)</p>
+        </div>
+      </div>
+
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-5">
+        <p class="text-sm text-blue-800 mb-2"><strong>Option A &mdash; Automatic (recommended)</strong></p>
+        <p class="text-xs text-blue-700 mb-2">Run this PowerShell command and paste the Client ID below:</p>
+        <div class="relative">
+          <pre class="bg-blue-100 rounded px-3 py-2 text-xs font-mono text-blue-900 overflow-x-auto">pwsh ./Register-App.ps1</pre>
+        </div>
+
+        <hr class="my-3 border-blue-200">
+
+        <p class="text-sm text-blue-800 mb-2"><strong>Option B &mdash; Manual</strong></p>
+        <ol class="text-xs text-blue-700 space-y-1 list-decimal list-inside">
+          <li>Go to <strong>Entra ID</strong> &gt; App registrations &gt; New registration</li>
+          <li>Set account type to <strong>"Accounts in any organizational directory"</strong></li>
+          <li>Add a <strong>Single-page application (SPA)</strong> redirect URI: <code class="bg-blue-100 px-1 rounded" id="setup-redirect-uri"></code></li>
+          <li>Add delegated permissions: <strong>DeviceManagementConfiguration.ReadWrite.All</strong>, <strong>Group.Read.All</strong>, <strong>DeviceManagementRBAC.ReadWrite.All</strong></li>
+          <li>Copy the <strong>Application (client) ID</strong> and paste below</li>
+        </ol>
+      </div>
+
+      <div class="mb-5">
+        <label for="setup-client-id" class="block text-sm font-medium text-gray-700 mb-1.5">Application (Client) ID</label>
+        <input id="setup-client-id" type="text" placeholder="e.g. 12345678-abcd-1234-efgh-123456789012" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition font-mono" spellcheck="false" autocomplete="off">
+        <p id="setup-error" class="hidden text-xs text-red-600 mt-1.5">Please enter a valid GUID (e.g. 12345678-abcd-1234-efgh-123456789012)</p>
+      </div>
+
+      <div class="flex justify-end gap-3">
+        <button id="setup-cancel" class="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm font-medium">Cancel</button>
+        <button id="setup-save" class="px-5 py-2.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition text-sm font-medium flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          Save & Continue
+        </button>
+      </div>
+
+      <p class="text-xs text-gray-400 mt-4 text-center">Saved in your browser. You only need to do this once.</p>
+    </div>
+  </div>
 
   <!-- ==================== CONFIRM MODAL ==================== -->
   <div id="confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
