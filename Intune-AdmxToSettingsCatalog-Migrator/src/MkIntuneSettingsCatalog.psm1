@@ -1,16 +1,24 @@
 # MkIntuneSettingsCatalog.psm1
+# Settings Catalog (configurationPolicies) operations for Intune.
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 function Search-MkSettingsCatalogSettings {
+  <#
+  .SYNOPSIS
+    Searches the Settings Catalog for settings matching a query string.
+  .DESCRIPTION
+    Uses the $search query parameter which requires the ConsistencyLevel=eventual header.
+    Returns matching settings or an empty array. Failures are logged rather than silently swallowed.
+  #>
   [CmdletBinding()]
   param(
     [Parameter(Mandatory=$true)][string]$Token,
     [Parameter(Mandatory=$true)][ValidateSet("beta","v1.0")] [string]$ApiVersion,
-    [Parameter(Mandatory=$true)][string]$Query
+    [Parameter(Mandatory=$true)][string]$Query,
+    [Parameter()][string]$LogPath
   )
 
-  # Uses $search which requires ConsistencyLevel header.
   $base = "https://graph.microsoft.com/$ApiVersion/deviceManagement"
   $uri = "$base/configurationSettings?`$search=""$Query"""
   $headers = @{ "ConsistencyLevel" = "eventual" }
@@ -18,12 +26,20 @@ function Search-MkSettingsCatalogSettings {
     $resp = Invoke-MkGraphRequest -Token $Token -Method GET -Uri $uri -Headers $headers
     return $resp.value
   } catch {
-    # Fallback: return empty if tenant does not allow search
+    $msg = "Settings Catalog search failed for query '$Query': $($_.Exception.Message)"
+    if ($LogPath) { Write-Log -Level "WARN" -Message $msg -LogPath $LogPath }
+    else { Write-Warning $msg }
     return @()
   }
 }
 
 function Get-MkSettingsCatalogPolicyByMarker {
+  <#
+  .SYNOPSIS
+    Finds an existing Settings Catalog policy that contains the source marker in its description.
+  .DESCRIPTION
+    Used for idempotency: checks if a policy was already created by this tool for a given source policy ID.
+  #>
   [CmdletBinding()]
   param(
     [Parameter(Mandatory=$true)][string]$Token,
@@ -32,7 +48,6 @@ function Get-MkSettingsCatalogPolicyByMarker {
     [Parameter(Mandatory=$true)][string]$SourceId
   )
   $base = "https://graph.microsoft.com/$ApiVersion/deviceManagement"
-  # filter on name not reliable; we fetch and match marker in description
   $pols = Get-MkGraphPaged -Token $Token -Uri "$base/configurationPolicies"
   foreach ($p in $pols) {
     if ($p.description -and $p.description -match [regex]::Escape($MarkerKey) -and $p.description -match [regex]::Escape($SourceId)) {
@@ -43,15 +58,21 @@ function Get-MkSettingsCatalogPolicyByMarker {
 }
 
 function New-MkSettingsCatalogPolicy {
+  <#
+  .SYNOPSIS
+    Creates a new Settings Catalog policy in Intune.
+  #>
   [CmdletBinding()]
   param(
     [Parameter(Mandatory=$true)][string]$Token,
     [Parameter(Mandatory=$true)][ValidateSet("beta","v1.0")] [string]$ApiVersion,
     [Parameter(Mandatory=$true)][string]$DisplayName,
     [Parameter()][string]$Description,
-    [Parameter(Mandatory=$true)][string]$Platform,  # windows10
+    [Parameter(Mandatory=$true)][string]$Platform,
     [Parameter()][string]$Technologies = "mdm"
   )
+
+  if ([string]::IsNullOrWhiteSpace($DisplayName)) { throw "DisplayName cannot be empty when creating a Settings Catalog policy." }
 
   $base = "https://graph.microsoft.com/$ApiVersion/deviceManagement"
   $body = @{
@@ -64,13 +85,21 @@ function New-MkSettingsCatalogPolicy {
 }
 
 function Add-MkSettingsCatalogSettings {
+  <#
+  .SYNOPSIS
+    Adds one or more settings to an existing Settings Catalog policy.
+  #>
   [CmdletBinding()]
   param(
     [Parameter(Mandatory=$true)][string]$Token,
     [Parameter(Mandatory=$true)][ValidateSet("beta","v1.0")] [string]$ApiVersion,
     [Parameter(Mandatory=$true)][string]$PolicyId,
-    [Parameter(Mandatory=$true)][array]$Settings # array of deviceManagementConfigurationSetting
+    [Parameter(Mandatory=$true)][array]$Settings
   )
+
+  if ([string]::IsNullOrWhiteSpace($PolicyId)) { throw "PolicyId cannot be empty." }
+  if ($Settings.Count -eq 0) { throw "Settings array cannot be empty." }
+
   $base = "https://graph.microsoft.com/$ApiVersion/deviceManagement"
   foreach ($s in $Settings) {
     Invoke-MkGraphRequest -Token $Token -Method POST -Uri "$base/configurationPolicies/$PolicyId/settings" -Body $s | Out-Null
@@ -78,6 +107,10 @@ function Add-MkSettingsCatalogSettings {
 }
 
 function Assign-MkSettingsCatalogPolicy {
+  <#
+  .SYNOPSIS
+    Applies assignment targets to a Settings Catalog policy.
+  #>
   [CmdletBinding()]
   param(
     [Parameter(Mandatory=$true)][string]$Token,
@@ -85,18 +118,28 @@ function Assign-MkSettingsCatalogPolicy {
     [Parameter(Mandatory=$true)][string]$PolicyId,
     [Parameter(Mandatory=$true)][array]$Assignments
   )
+
+  if ([string]::IsNullOrWhiteSpace($PolicyId)) { throw "PolicyId cannot be empty." }
+
   $base = "https://graph.microsoft.com/$ApiVersion/deviceManagement"
   $body = @{ assignments = $Assignments }
   Invoke-MkGraphRequest -Token $Token -Method POST -Uri "$base/configurationPolicies/$PolicyId/assign" -Body $body | Out-Null
 }
 
 function Remove-MkSettingsCatalogPolicy {
+  <#
+  .SYNOPSIS
+    Deletes a Settings Catalog policy from Intune.
+  #>
   [CmdletBinding()]
   param(
     [Parameter(Mandatory=$true)][string]$Token,
     [Parameter(Mandatory=$true)][ValidateSet("beta","v1.0")] [string]$ApiVersion,
     [Parameter(Mandatory=$true)][string]$PolicyId
   )
+
+  if ([string]::IsNullOrWhiteSpace($PolicyId)) { throw "PolicyId cannot be empty." }
+
   $base = "https://graph.microsoft.com/$ApiVersion/deviceManagement"
   Invoke-MkGraphRequest -Token $Token -Method DELETE -Uri "$base/configurationPolicies/$PolicyId" | Out-Null
 }

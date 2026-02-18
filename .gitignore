@@ -1,0 +1,27 @@
+# Secrets and credentials - NEVER commit these
+config/config.json
+*.pfx
+*.pem
+*.key
+
+# Output artifacts (contain tenant-specific data)
+output/export.admx.json
+output/mapping.suggestions.json
+output/mapping.json
+output/migration.manifest.json
+output/duplicate-report.json
+output/duplicate-report.txt
+output/backups/
+output/logs/
+
+# Log files
+*.log
+*.log.*.bak
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~

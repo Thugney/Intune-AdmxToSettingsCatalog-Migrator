@@ -4,7 +4,9 @@
   "Auth": {
     "Type": "ClientSecret",
     "ClientSecret": "PUT_SECRET_HERE",
-    "CertificateThumbprint": ""
+    "CertificateThumbprint": "",
+    "CertificatePath": "",
+    "CertificatePassword": ""
   },
   "Graph": {
     "ApiVersion": "beta"
@@ -15,6 +17,7 @@
     "SkipUnmapped": true
   },
   "Paths": {
-    "OutputDir": ".\\output"
+    "OutputDir": ".\\output",
+    "LogDir": ""
   }
 }
