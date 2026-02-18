@@ -12,13 +12,14 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       const filter = btn.dataset.filter;
       filterDuplicates(filter);
-      document.querySelectorAll('.dup-filter-btn').forEach(b => b.classList.remove('ring-2', 'ring-offset-1'));
-      btn.classList.add('ring-2', 'ring-offset-1');
+      document.querySelectorAll('.dup-filter-btn').forEach(b => b.classList.remove('ring-2', 'ring-brand-500'));
+      btn.classList.add('ring-2', 'ring-brand-500');
     });
   });
 
   window.addEventListener('page-loaded', (e) => {
     if (e.detail.page === 'duplicates' && state.duplicateReport) {
+      document.getElementById('btn-download-dup-report').classList.remove('hidden');
       showDuplicateResults();
     }
   });
@@ -53,6 +54,7 @@ function analyzeDuplicates() {
       document.getElementById('stat-duplicates').textContent = report.summary.duplicateGroups;
       document.getElementById('stat-conflicts').textContent = report.summary.conflicts;
 
+      document.getElementById('btn-download-dup-report').classList.remove('hidden');
       showDuplicateResults();
       showToast(`Analysis complete: ${report.summary.duplicateGroups} duplicate groups found`, report.summary.conflicts > 0 ? 'warning' : 'success');
     } catch (error) {

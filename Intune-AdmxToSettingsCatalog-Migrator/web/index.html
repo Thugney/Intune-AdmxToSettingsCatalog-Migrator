@@ -591,11 +591,17 @@ pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Migrate</code
         <div id="page-duplicates" class="page hidden">
           <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
             <h3 class="text-lg font-semibold mb-2">Duplicate Settings Detector</h3>
-            <p class="text-gray-500 text-sm mb-4">Scans your exported policies for duplicate or conflicting settings across administrative templates. Identifies which settings appear in multiple policies and whether they have matching or conflicting values.</p>
-            <button id="btn-analyze-duplicates" class="px-5 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition font-medium flex items-center gap-2">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-              Analyze Duplicates
-            </button>
+            <p class="text-gray-500 text-sm mb-4">Scans your exported policies for settings that appear in more than one ADMX policy. Finds both safe duplicates (same value everywhere) and conflicts (different values across policies). Resolve conflicts before migrating.</p>
+            <div class="flex items-center gap-3">
+              <button id="btn-analyze-duplicates" class="px-5 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition font-medium flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                Analyze Duplicates
+              </button>
+              <button id="btn-download-dup-report" class="hidden px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Download Report (JSON)
+              </button>
+            </div>
           </div>
 
           <div id="dup-results" class="hidden space-y-6">
@@ -608,44 +614,56 @@ pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Migrate</code
               <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
                 <p class="text-sm text-gray-500">Duplicate Groups</p>
                 <p id="dup-total-groups" class="text-2xl font-bold mt-1 text-amber-600">0</p>
+                <p class="text-xs text-gray-400 mt-0.5">Settings in 2+ policies</p>
               </div>
               <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
                 <p class="text-sm text-gray-500">Consistent</p>
                 <p id="dup-consistent" class="text-2xl font-bold mt-1 text-green-600">0</p>
+                <p class="text-xs text-gray-400 mt-0.5">Same value, safe to merge</p>
               </div>
               <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
                 <p class="text-sm text-gray-500">Conflicts</p>
                 <p id="dup-conflicts" class="text-2xl font-bold mt-1 text-red-600">0</p>
+                <p class="text-xs text-gray-400 mt-0.5">Different values, fix before migrating</p>
               </div>
             </div>
 
-            <!-- Duplicate Groups -->
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
-              <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h3 class="text-lg font-semibold">Duplicate Settings</h3>
-                <div class="flex gap-2">
-                  <button class="dup-filter-btn px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition" data-filter="all">All</button>
-                  <button class="dup-filter-btn px-3 py-1 text-xs rounded-full bg-red-50 text-red-700 hover:bg-red-100 transition" data-filter="conflict">Conflicts</button>
-                  <button class="dup-filter-btn px-3 py-1 text-xs rounded-full bg-green-50 text-green-700 hover:bg-green-100 transition" data-filter="consistent">Consistent</button>
+            <!-- Explanation Banner -->
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <h4 class="text-sm font-semibold text-amber-900 mb-1.5">What am I looking at?</h4>
+              <p class="text-xs text-amber-800 leading-relaxed mb-2">A "duplicate" means the same ADMX setting exists in more than one policy. This is common when policies target different groups but overlap in some settings.</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div class="flex items-start gap-2">
+                  <svg class="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <div><strong class="text-green-700">Consistent</strong><span class="text-amber-700"> — Same setting, same value in all policies. No action needed, but you can consolidate them into one policy to simplify.</span></div>
+                </div>
+                <div class="flex items-start gap-2">
+                  <svg class="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <div><strong class="text-red-700">Conflict</strong><span class="text-amber-700"> — Same setting, different values across policies (e.g. enabled in one, disabled in another). Decide which value should win before migrating.</span></div>
                 </div>
               </div>
-              <div id="dup-groups-list" class="divide-y divide-gray-100"></div>
+            </div>
+
+            <!-- Duplicate Groups Table -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div class="px-6 py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
+                <h3 class="text-lg font-semibold">Duplicate Settings</h3>
+                <div class="flex gap-2">
+                  <button class="dup-filter-btn px-3 py-1 text-xs rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition font-medium" data-filter="all">All</button>
+                  <button class="dup-filter-btn px-3 py-1 text-xs rounded-full bg-red-50 text-red-700 hover:bg-red-100 transition font-medium" data-filter="conflict">Conflicts Only</button>
+                  <button class="dup-filter-btn px-3 py-1 text-xs rounded-full bg-green-50 text-green-700 hover:bg-green-100 transition font-medium" data-filter="consistent">Consistent Only</button>
+                </div>
+              </div>
+              <div id="dup-groups-list" class="divide-y divide-gray-100 max-h-[600px] overflow-y-auto"></div>
             </div>
 
             <!-- Merge Candidates -->
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
               <div class="px-6 py-4 border-b border-gray-200">
                 <h3 class="text-lg font-semibold">Merge Candidates</h3>
-                <p class="text-sm text-gray-500 mt-1">Policy pairs ranked by number of shared settings</p>
+                <p class="text-sm text-gray-500 mt-1">Policy pairs ranked by number of shared settings. Consider merging these into a single policy to reduce complexity.</p>
               </div>
-              <div id="dup-merge-list" class="divide-y divide-gray-100"></div>
-            </div>
-
-            <div class="flex gap-3">
-              <button id="btn-download-dup-report" class="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                Download Report (JSON)
-              </button>
+              <div id="dup-merge-list" class="divide-y divide-gray-100 max-h-[400px] overflow-y-auto"></div>
             </div>
           </div>
         </div>
@@ -677,17 +695,62 @@ pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Migrate</code
               </div>
             </div>
           </div>
-          <div id="mapping-results" class="hidden">
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
-              <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h3 class="text-lg font-semibold">Mapping Suggestions</h3>
-                <div class="flex items-center gap-4 text-sm">
-                  <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-green-500"></span> High confidence</span>
-                  <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span> Medium</span>
-                  <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> No match</span>
+          <div id="mapping-results" class="hidden space-y-6">
+            <!-- Summary Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
+                <p class="text-sm text-gray-500">Total Settings</p>
+                <p id="mapping-stat-total" class="text-2xl font-bold mt-1">0</p>
+              </div>
+              <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
+                <p class="text-sm text-gray-500">Ready to Migrate</p>
+                <p id="mapping-stat-high" class="text-2xl font-bold mt-1 text-green-600">0</p>
+                <p class="text-xs text-gray-400 mt-0.5">Exact or near-exact SC match</p>
+              </div>
+              <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
+                <p class="text-sm text-gray-500">Review Needed</p>
+                <p id="mapping-stat-medium" class="text-2xl font-bold mt-1 text-amber-500">0</p>
+                <p class="text-xs text-gray-400 mt-0.5">Possible match, verify manually</p>
+              </div>
+              <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
+                <p class="text-sm text-gray-500">No SC Equivalent</p>
+                <p id="mapping-stat-none" class="text-2xl font-bold mt-1 text-gray-400">0</p>
+                <p class="text-xs text-gray-400 mt-0.5">Not available in Settings Catalog</p>
+              </div>
+            </div>
+
+            <!-- Explanation Banner -->
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <h4 class="text-sm font-semibold text-blue-900 mb-1.5">What am I looking at?</h4>
+              <p class="text-xs text-blue-800 leading-relaxed mb-2">Each row below maps one of your ADMX settings (left) to its Settings Catalog equivalent (right). The tool searched Microsoft's Settings Catalog API by name for each setting.</p>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div class="flex items-start gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0 mt-0.5"></span>
+                  <div><strong class="text-green-700">High confidence</strong><span class="text-blue-700"> — Names match closely. These will be migrated automatically.</span></div>
+                </div>
+                <div class="flex items-start gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-yellow-500 flex-shrink-0 mt-0.5"></span>
+                  <div><strong class="text-amber-600">Medium</strong><span class="text-blue-700"> — A result was found but names differ. May be correct, but verify before migrating.</span></div>
+                </div>
+                <div class="flex items-start gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-gray-400 flex-shrink-0 mt-0.5"></span>
+                  <div><strong class="text-gray-600">No match</strong><span class="text-blue-700"> — No SC equivalent found. The ADMX policy must stay active for these settings.</span></div>
                 </div>
               </div>
-              <div id="mapping-table" class="divide-y divide-gray-100"></div>
+            </div>
+
+            <!-- Filter Buttons + Table -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div class="px-6 py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
+                <h3 class="text-lg font-semibold">Mapping Details</h3>
+                <div class="flex gap-2">
+                  <button class="mapping-filter-btn px-3 py-1 text-xs rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition font-medium" data-filter="all">All</button>
+                  <button class="mapping-filter-btn px-3 py-1 text-xs rounded-full bg-green-50 text-green-700 hover:bg-green-100 transition font-medium" data-filter="high">High</button>
+                  <button class="mapping-filter-btn px-3 py-1 text-xs rounded-full bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition font-medium" data-filter="medium">Medium</button>
+                  <button class="mapping-filter-btn px-3 py-1 text-xs rounded-full bg-gray-50 text-gray-500 hover:bg-gray-100 transition font-medium" data-filter="none">No Match</button>
+                </div>
+              </div>
+              <div id="mapping-table" class="divide-y divide-gray-100 max-h-[600px] overflow-y-auto"></div>
             </div>
           </div>
         </div>
@@ -697,6 +760,21 @@ pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Migrate</code
           <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
             <h3 class="text-lg font-semibold mb-2">Migrate to Settings Catalog</h3>
             <p class="text-gray-500 text-sm mb-4">Creates Settings Catalog policies from your curated mapping. Each ADMX policy becomes a new Settings Catalog policy with the mapped settings and assignments re-applied.</p>
+
+            <!-- Policy Selection List -->
+            <div id="migration-policy-selector" class="mb-4 hidden">
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-sm font-medium text-gray-700">Select policies to migrate:</label>
+                <div class="flex items-center gap-2">
+                  <button id="btn-select-all" class="text-xs text-brand-600 hover:text-brand-700 font-medium">Select All</button>
+                  <span class="text-gray-300">|</span>
+                  <button id="btn-deselect-all" class="text-xs text-brand-600 hover:text-brand-700 font-medium">Deselect All</button>
+                </div>
+              </div>
+              <div id="migration-policy-list" class="max-h-64 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100"></div>
+              <p id="migration-selection-count" class="text-xs text-gray-500 mt-1">0 of 0 policies selected</p>
+            </div>
+
             <div class="flex flex-wrap items-center gap-3">
               <button id="btn-migrate-preview" class="px-5 py-2.5 border border-brand-600 text-brand-600 rounded-lg hover:bg-brand-50 transition font-medium flex items-center gap-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
@@ -772,6 +850,35 @@ pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Migrate</code
 
   <!-- ==================== TOAST NOTIFICATION ==================== -->
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+  <!-- ==================== MAPPING SEARCH MODAL ==================== -->
+  <div id="mapping-search-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 p-6 max-h-[80vh] flex flex-col">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="text-lg font-bold text-gray-900">Search Settings Catalog</h3>
+          <p id="mapping-search-source" class="text-sm text-gray-500 mt-0.5"></p>
+        </div>
+        <button id="mapping-search-close" class="p-1 text-gray-400 hover:text-gray-600 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="flex gap-2 mb-4">
+        <input id="mapping-search-input" type="text" placeholder="Type a setting name to search..." class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition" spellcheck="false">
+        <button id="mapping-search-btn" class="px-4 py-2.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition text-sm font-medium flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          Search
+        </button>
+      </div>
+      <div id="mapping-search-results" class="flex-1 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+        <div class="p-8 text-center text-gray-400 text-sm">Enter a search term and click Search</div>
+      </div>
+      <div class="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
+        <button id="mapping-search-clear" class="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition font-medium">Remove Mapping</button>
+        <button id="mapping-search-cancel" class="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium">Cancel</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ==================== SETUP MODAL (first-time Client ID) ==================== -->
   <div id="setup-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
