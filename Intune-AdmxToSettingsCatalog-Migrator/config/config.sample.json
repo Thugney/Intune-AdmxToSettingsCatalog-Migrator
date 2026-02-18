@@ -1,0 +1,20 @@
+{
+  "TenantId": "00000000-0000-0000-0000-000000000000",
+  "ClientId": "00000000-0000-0000-0000-000000000000",
+  "Auth": {
+    "Type": "ClientSecret",
+    "ClientSecret": "PUT_SECRET_HERE",
+    "CertificateThumbprint": ""
+  },
+  "Graph": {
+    "ApiVersion": "beta"
+  },
+  "Migration": {
+    "TargetNamePrefix": "SC - ",
+    "SourceMarkerKey": "MK_ADMX_SOURCE_ID",
+    "SkipUnmapped": true
+  },
+  "Paths": {
+    "OutputDir": ".\\output"
+  }
+}

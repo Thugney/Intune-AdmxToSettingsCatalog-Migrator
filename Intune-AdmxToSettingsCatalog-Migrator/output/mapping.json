@@ -1,0 +1,21 @@
+{
+  "entries": [
+    {
+      "sourcePolicyId": "ADMX_POLICY_GUID",
+      "sourceDefinitionValueId": "DEFINITION_VALUE_GUID",
+      "targetSettingDefinitionId": "SETTINGS_CATALOG_SETTING_DEFINITION_ID",
+      "settingPayload": {
+        "@odata.type": "#microsoft.graph.deviceManagementConfigurationSetting",
+        "settingInstance": {
+          "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+          "settingDefinitionId": "SETTINGS_CATALOG_SETTING_DEFINITION_ID",
+          "choiceSettingValue": {
+            "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingValue",
+            "value": "enabled",
+            "children": []
+          }
+        }
+      }
+    }
+  ]
+}
