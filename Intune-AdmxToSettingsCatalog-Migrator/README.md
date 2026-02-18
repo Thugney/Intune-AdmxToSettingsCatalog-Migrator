@@ -26,14 +26,85 @@ Automates migration of **Administrative Templates** (Graph: `groupPolicyConfigur
 
 ## Requirements
 
-- **PowerShell 7+** (cross-platform)
-- **Azure AD App Registration** with one of:
-  - Client secret
-  - Certificate (thumbprint in local store, or PFX file)
-  - Interactive login (device code flow - no secret needed)
-- **Microsoft Graph API permissions** (application or delegated):
+- **PowerShell 7+** (cross-platform) — for the CLI
+- **An Entra ID (Azure AD) App Registration** — see setup guide below
+- **Microsoft Graph API permissions** on the app registration:
   - `DeviceManagementConfiguration.Read.All` (export, duplicates)
   - `DeviceManagementConfiguration.ReadWrite.All` (migrate, assign, rollback)
+
+---
+
+## Entra ID App Registration Setup
+
+You need an app registration in Microsoft Entra ID (formerly Azure AD) to authenticate with the Microsoft Graph API. This gives you the **Tenant ID** and **Client ID** that both the Web UI and PowerShell CLI require.
+
+### Step 1: Create the App Registration
+
+1. Go to the [Microsoft Entra admin center](https://entra.microsoft.com)
+2. Navigate to **Identity > Applications > App registrations**
+3. Click **New registration**
+4. Fill in:
+   - **Name**: `Intune ADMX Migrator` (or any name you prefer)
+   - **Supported account types**: *Accounts in this organizational directory only (Single tenant)*
+   - **Redirect URI**: Leave blank for now (you'll add this in Step 3 if using the Web UI)
+5. Click **Register**
+
+After registration, you'll land on the app's **Overview** page. Copy these two values — you'll need them for configuration:
+
+| Value | Where to find it | Used in |
+|-------|------------------|---------|
+| **Application (client) ID** | Overview page, top section | `ClientId` in config.json / Web UI login |
+| **Directory (tenant) ID** | Overview page, top section | `TenantId` in config.json / Web UI login |
+
+### Step 2: Add API Permissions
+
+1. In your app registration, go to **API permissions**
+2. Click **Add a permission** > **Microsoft Graph** > **Application permissions**
+3. Search for and add:
+   - `DeviceManagementConfiguration.Read.All` — required for export and duplicate detection
+   - `DeviceManagementConfiguration.ReadWrite.All` — required for migration, assignments, and rollback
+4. Click **Grant admin consent for [your tenant]** (requires Global Admin or Privileged Role Admin)
+
+> If you only plan to export and detect duplicates (read-only), `Read.All` is sufficient. Add `ReadWrite.All` when you're ready to migrate.
+
+### Step 3: Configure Authentication
+
+Choose one method based on your needs:
+
+#### For the Web UI (browser-based):
+1. In your app registration, go to **Authentication**
+2. Click **Add a platform** > **Single-page application (SPA)**
+3. Set **Redirect URI** to `http://localhost:8080` (or the URL where you serve the web app)
+4. Click **Configure**
+
+No client secret or certificate is needed — the Web UI uses interactive popup login via MSAL.js.
+
+#### For PowerShell CLI — pick one:
+
+**Option A: Interactive login (easiest, no secrets)**
+- No extra setup needed. The tool uses device code flow — you sign in via browser when prompted.
+- In your app registration, go to **Authentication** > **Advanced settings** and set **Allow public client flows** to **Yes**
+
+**Option B: Client secret**
+1. Go to **Certificates & secrets** > **Client secrets** > **New client secret**
+2. Set a description and expiry, then click **Add**
+3. Copy the secret **Value** immediately (it's only shown once)
+
+**Option C: Certificate (recommended for production)**
+1. Go to **Certificates & secrets** > **Certificates** > **Upload certificate**
+2. Upload the public key (`.cer` or `.pem`)
+3. Install the private key (`.pfx`) on the machine where you'll run the tool
+
+### Step 4: Verify
+
+To confirm everything is set up correctly:
+1. Copy `config\config.sample.json` to `config\config.json`
+2. Fill in your **TenantId**, **ClientId**, and **Auth** section
+3. Run a test export:
+   ```powershell
+   pwsh .\Invoke-Migration.ps1 -ConfigPath .\config\config.json -Mode Export
+   ```
+   If it connects and exports your policies, the app registration is correctly configured.
 
 ---
 

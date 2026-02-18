@@ -65,18 +65,31 @@ cd Intune-AdmxToSettingsCatalog-Migrator
 pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Export
 ```
 
+## Prerequisites
+
+Both the Web UI and PowerShell CLI require an **Entra ID (Azure AD) app registration**. This is what gives you the Tenant ID and Client ID you'll be asked for.
+
+**See the full [app registration setup guide](Intune-AdmxToSettingsCatalog-Migrator/README.md#entra-id-app-registration-setup) in the project README.**
+
+Quick summary:
+1. Create an app registration in the [Entra admin center](https://entra.microsoft.com)
+2. Add `DeviceManagementConfiguration.ReadWrite.All` Graph API permission and grant admin consent
+3. For the Web UI: add a **SPA redirect URI** (`http://localhost:8080`) under Authentication
+4. For the PowerShell CLI: add a client secret, certificate, or enable public client flows for interactive login
+
+## Requirements
+
+- **Web UI**: Any modern browser + a local HTTP server (Python, Node.js, or PowerShell)
+- **PowerShell CLI**: PowerShell 7+
+- **Both**: Entra ID app registration with Graph API permissions ([setup guide](Intune-AdmxToSettingsCatalog-Migrator/README.md#entra-id-app-registration-setup))
+
 ## Documentation
 
 See the full [README](Intune-AdmxToSettingsCatalog-Migrator/README.md) inside the project folder for:
-- Setup and configuration
+- Entra ID app registration setup (step-by-step)
 - Authentication methods (client secret, certificate, interactive)
 - Step-by-step workflow guide
 - Duplicate detection and resolution
 - Backup and restore
 - Troubleshooting
-
-## Requirements
-
-- **Web UI**: Any modern browser + a local HTTP server (Python, Node.js, or PowerShell) + Azure AD app registration with SPA redirect URI
-- **PowerShell CLI**: PowerShell 7+ and Azure AD app registration with Graph API permissions
 

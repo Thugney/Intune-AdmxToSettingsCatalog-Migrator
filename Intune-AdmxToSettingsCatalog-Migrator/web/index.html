@@ -151,8 +151,8 @@
             <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-5 group-hover:bg-purple-500/20 transition">
               <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
             </div>
-            <h3 class="text-lg font-semibold text-white mb-2">Smart Mapping</h3>
-            <p class="text-slate-400 text-sm leading-relaxed">Auto-generates mapping suggestions with confidence levels (high, medium, none). Searches the Settings Catalog API for each ADMX setting.</p>
+            <h3 class="text-lg font-semibold text-white mb-2">Setting Search & Mapping</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">Searches the Settings Catalog API for each ADMX setting by name and returns potential matches with confidence indicators (high, medium, none). You review and confirm every mapping before migration.</p>
           </div>
 
           <!-- Feature 4: One-Click Migration -->
@@ -216,7 +216,7 @@
             <div class="flex-shrink-0 w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-purple-500/20">3</div>
             <div class="flex-1 bg-slate-800/40 border border-slate-700/50 rounded-xl p-6 group-hover:border-purple-500/30 transition-all">
               <h3 class="text-white font-semibold text-lg mb-1">Map Settings</h3>
-              <p class="text-slate-400 text-sm">Auto-generate mapping suggestions from ADMX to Settings Catalog. Review and curate the mapping.</p>
+              <p class="text-slate-400 text-sm">Search the Settings Catalog API for each ADMX setting by name. Review the results, confirm or adjust matches, and build your mapping.</p>
             </div>
           </div>
           <!-- Step 4 -->
@@ -618,7 +618,7 @@ pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Migrate</code
         <div id="page-mapping" class="page hidden">
           <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
             <h3 class="text-lg font-semibold mb-2">Settings Mapping</h3>
-            <p class="text-gray-500 text-sm mb-4">Auto-generates mapping suggestions from your ADMX settings to Settings Catalog equivalents. Review and curate the mappings, then download the final mapping.json for migration.</p>
+            <p class="text-gray-500 text-sm mb-4">Searches the Settings Catalog API for each of your ADMX settings by display name and returns potential matches ranked by confidence. Review the results, confirm or adjust each mapping, then download the final mapping.json for migration.</p>
             <div class="flex items-center gap-3">
               <button id="btn-generate-mapping" class="px-5 py-2.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition font-medium flex items-center gap-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
