@@ -38,6 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => navigateTo(btn.dataset.page));
   });
+
+  // Landing page setup
+  initLandingPage();
 });
 
 async function handleLogin() {
@@ -85,11 +88,19 @@ async function handleLogin() {
 function handleLogout() {
   logout();
   sessionStorage.clear();
-  document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('app-shell').classList.add('hidden');
+  document.getElementById('login-screen').classList.add('hidden');
+  const landing = document.getElementById('landing-page');
+  if (landing) {
+    landing.classList.remove('hidden');
+    window.scrollTo(0, 0);
+  } else {
+    document.getElementById('login-screen').classList.remove('hidden');
+  }
 }
 
 function showApp(account, tenantId) {
+  document.getElementById('landing-page')?.classList.add('hidden');
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('app-shell').classList.remove('hidden');
 
@@ -233,4 +244,91 @@ export function logLine(containerId, message, level = 'info') {
   line.textContent = `${ts} [${level.toUpperCase()}] ${message}`;
   container.appendChild(line);
   container.scrollTop = container.scrollHeight;
+}
+
+// ==================== LANDING PAGE ====================
+function initLandingPage() {
+  const landing = document.getElementById('landing-page');
+  if (!landing) return;
+
+  // "Get Started" buttons -> show login screen
+  document.querySelectorAll('.landing-cta, #nav-get-started, #hero-get-started, #cta-get-started').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      showLoginScreen();
+    });
+  });
+
+  // "Back to home" button on login screen
+  const backBtn = document.getElementById('back-to-landing');
+  if (backBtn) {
+    backBtn.addEventListener('click', () => {
+      document.getElementById('login-screen').classList.add('hidden');
+      landing.classList.remove('hidden');
+      landing.classList.add('screen-fade-in');
+    });
+  }
+
+  // Mobile menu toggle
+  const mobileBtn = document.getElementById('mobile-menu-btn');
+  const mobileMenu = document.getElementById('mobile-menu');
+  if (mobileBtn && mobileMenu) {
+    mobileBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+  }
+
+  // Nav background on scroll
+  const nav = document.getElementById('landing-nav');
+  if (nav) {
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 40);
+    });
+  }
+
+  // Feature cards intersection observer (staggered reveal)
+  const featureCards = document.querySelectorAll('.feature-card');
+  if (featureCards.length > 0 && 'IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          // Stagger the animation
+          const idx = Array.from(featureCards).indexOf(entry.target);
+          setTimeout(() => {
+            entry.target.classList.add('visible');
+          }, idx * 100);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+
+    featureCards.forEach(card => observer.observe(card));
+  }
+
+  // Smooth scroll for anchor links
+  landing.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Close mobile menu if open
+        if (mobileMenu) mobileMenu.classList.add('hidden');
+      }
+    });
+  });
+}
+
+function showLoginScreen() {
+  const landing = document.getElementById('landing-page');
+  const login = document.getElementById('login-screen');
+
+  landing.classList.add('screen-fade-out');
+  setTimeout(() => {
+    landing.classList.add('hidden');
+    landing.classList.remove('screen-fade-out');
+    login.classList.remove('hidden');
+    login.classList.add('screen-fade-in');
+    setTimeout(() => login.classList.remove('screen-fade-in'), 300);
+  }, 300);
 }
