@@ -42,8 +42,13 @@ export async function login() {
     currentAccount = response.account;
     return currentAccount;
   } catch (error) {
-    if (error.errorCode === 'user_cancelled') {
-      throw new Error('Sign-in was cancelled. Please try again.');
+    // User cancelled or declined consent
+    if (error.errorCode === 'user_cancelled' || (error.errorMessage && error.errorMessage.includes('AADSTS65004'))) {
+      throw new Error('Sign-in was cancelled. You must accept the permissions to use this tool.');
+    }
+    // Popup was blocked by browser
+    if (error.errorCode === 'popup_window_error') {
+      throw new Error('Popup was blocked. Please allow popups for this site and try again.');
     }
     // If consent is needed, retry with consent prompt
     if (error.errorCode === 'interaction_required' || error.errorCode === 'consent_required') {
