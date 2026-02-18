@@ -15,7 +15,79 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-download-manifest').addEventListener('click', () => {
     if (state.manifest) downloadJson(state.manifest, 'migration.manifest.json');
   });
+  document.getElementById('btn-select-all').addEventListener('click', () => toggleAllPolicies(true));
+  document.getElementById('btn-deselect-all').addEventListener('click', () => toggleAllPolicies(false));
+
+  // Refresh policy list when page becomes visible
+  const observer = new MutationObserver(() => {
+    const page = document.getElementById('page-migration');
+    if (page && !page.classList.contains('hidden')) {
+      renderPolicySelector();
+    }
+  });
+  const page = document.getElementById('page-migration');
+  if (page) observer.observe(page, { attributes: true, attributeFilter: ['class'] });
 });
+
+function renderPolicySelector() {
+  const container = document.getElementById('migration-policy-list');
+  const selector = document.getElementById('migration-policy-selector');
+
+  if (!state.exportData || state.exportData.length === 0) {
+    selector.classList.add('hidden');
+    return;
+  }
+
+  const mapIndex = getMappingIndex();
+  selector.classList.remove('hidden');
+
+  let html = '';
+  for (const policy of state.exportData) {
+    // Count mapped settings for this policy
+    let mappedCount = 0;
+    let totalCount = (policy.definitionValues || []).length;
+    if (mapIndex) {
+      for (const dv of (policy.definitionValues || [])) {
+        if (mapIndex[`${policy.id}|${dv.id}`]) mappedCount++;
+      }
+    }
+    const assignCount = (policy.assignments || []).filter(a => a && a.target).length;
+
+    html += `
+      <label class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer">
+        <input type="checkbox" class="migration-policy-cb rounded border-gray-300 text-brand-600 focus:ring-brand-500" data-policy-id="${escapeHtml(policy.id)}" checked>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-medium text-gray-900 truncate">${escapeHtml(policy.displayName)}</div>
+          <div class="text-xs text-gray-500">${mappedCount}/${totalCount} settings mapped &middot; ${assignCount} assignment${assignCount !== 1 ? 's' : ''}</div>
+        </div>
+      </label>`;
+  }
+
+  container.innerHTML = html;
+  updateSelectionCount();
+
+  // Listen for checkbox changes
+  container.querySelectorAll('.migration-policy-cb').forEach(cb => {
+    cb.addEventListener('change', updateSelectionCount);
+  });
+}
+
+function toggleAllPolicies(checked) {
+  document.querySelectorAll('.migration-policy-cb').forEach(cb => { cb.checked = checked; });
+  updateSelectionCount();
+}
+
+function updateSelectionCount() {
+  const all = document.querySelectorAll('.migration-policy-cb');
+  const selected = document.querySelectorAll('.migration-policy-cb:checked');
+  const countEl = document.getElementById('migration-selection-count');
+  if (countEl) countEl.textContent = `${selected.length} of ${all.length} policies selected`;
+}
+
+function getSelectedPolicyIds() {
+  const checked = document.querySelectorAll('.migration-policy-cb:checked');
+  return new Set(Array.from(checked).map(cb => cb.dataset.policyId));
+}
 
 function buildPayloadFromSuggestion(s) {
   const defId = s.recommended.settingDefinitionId;
@@ -113,15 +185,26 @@ async function runMigration(whatIf = false) {
   };
 
   try {
+    // Filter to only selected policies
+    const selectedIds = getSelectedPolicyIds();
+    const policiesToMigrate = state.exportData.filter(p => selectedIds.has(p.id));
+
+    if (policiesToMigrate.length === 0) {
+      showToast('No policies selected. Check the boxes next to the policies you want to migrate.', 'warning');
+      return;
+    }
+
+    logLine('migration-log', `Migrating ${policiesToMigrate.length} of ${state.exportData.length} policies`);
+
     // Check existing SC policies for idempotency
     logLine('migration-log', 'Checking existing Settings Catalog policies...');
     const existingPolicies = whatIf ? [] : await getSettingsCatalogPolicies();
 
     const markerKey = 'MK_ADMX_SOURCE_ID';
 
-    for (let i = 0; i < state.exportData.length; i++) {
-      const policy = state.exportData[i];
-      const pct = Math.round(((i + 1) / state.exportData.length) * 100);
+    for (let i = 0; i < policiesToMigrate.length; i++) {
+      const policy = policiesToMigrate[i];
+      const pct = Math.round(((i + 1) / policiesToMigrate.length) * 100);
       progressBar.style.width = pct + '%';
 
       const targetName = `SC - ${policy.displayName}`;
