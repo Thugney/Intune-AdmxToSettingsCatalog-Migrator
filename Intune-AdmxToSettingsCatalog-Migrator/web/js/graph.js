@@ -181,16 +181,21 @@ export async function getSettingsCatalogPolicies() {
   return graphGetPaged('/deviceManagement/configurationPolicies');
 }
 
-export async function createSettingsCatalogPolicy(name, description, platform = 'windows10', technologies = 'mdm') {
+export async function createSettingsCatalogPolicy(name, description, settings = [], platform = 'windows10', technologies = 'mdm') {
   return graphPost('/deviceManagement/configurationPolicies', {
-    name, description, platforms: platform, technologies
+    name,
+    description,
+    platforms: platform,
+    technologies,
+    roleScopeTagIds: ['0'],
+    templateReference: {
+      templateId: '',
+      templateFamily: 'none',
+      templateDisplayName: null,
+      templateDisplayVersion: null
+    },
+    settings
   });
-}
-
-export async function addSettingsToCatalogPolicy(policyId, settings) {
-  for (const s of settings) {
-    await graphPost(`/deviceManagement/configurationPolicies/${policyId}/settings`, s);
-  }
 }
 
 export async function assignSettingsCatalogPolicy(policyId, assignments) {

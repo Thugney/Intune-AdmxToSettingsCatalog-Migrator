@@ -3,7 +3,6 @@ import { state, showToast, escapeHtml, downloadJson, saveState, logLine, confirm
 import {
   getSettingsCatalogPolicies,
   createSettingsCatalogPolicy,
-  addSettingsToCatalogPolicy,
   assignSettingsCatalogPolicy,
   deleteSettingsCatalogPolicy
 } from '../graph.js';
@@ -259,16 +258,11 @@ async function runMigration(whatIf = false) {
         logLine('migration-log', `WOULD CREATE: "${targetName}" with ${settingsToAdd.length} settings (${unmappedCount} unmapped)`);
         manifest.createdPolicies.push({ sourcePolicyId: policy.id, targetName, settingsCount: settingsToAdd.length, whatIf: true });
       } else {
-        logLine('migration-log', `CREATING: "${targetName}"...`);
+        logLine('migration-log', `CREATING: "${targetName}" with ${settingsToAdd.length} settings...`);
         const desc = `${policy.description || ''}\n${marker}`.trim();
 
-        const newPolicy = await createSettingsCatalogPolicy(targetName, desc);
+        const newPolicy = await createSettingsCatalogPolicy(targetName, desc, settingsToAdd);
         logLine('migration-log', `Created policy: ${newPolicy.id}`);
-
-        if (settingsToAdd.length > 0) {
-          logLine('migration-log', `Adding ${settingsToAdd.length} settings...`);
-          await addSettingsToCatalogPolicy(newPolicy.id, settingsToAdd);
-        }
 
         // Apply assignments
         const assignments = (policy.assignments || [])
