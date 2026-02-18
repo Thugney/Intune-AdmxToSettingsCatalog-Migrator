@@ -1,3 +1,7 @@
+[![GitHub](https://img.shields.io/badge/GitHub-Thugney-181717?style=for-the-badge&logo=github)](https://github.com/Thugney/)
+[![X](https://img.shields.io/badge/X-@eriteach-000000?style=for-the-badge&logo=x)](https://x.com/eriteach)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-eriteach-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/eriteach/)
+
 # Intune ADMX to Settings Catalog Migrator
 
 Automates migration of **Administrative Templates** (ADMX) to **Settings Catalog** policies in Microsoft Intune.
@@ -40,8 +44,3 @@ See the full [README](Intune-AdmxToSettingsCatalog-Migrator/README.md) inside th
 - **Web UI**: Any modern browser + Azure AD app registration with SPA redirect URI
 - **PowerShell CLI**: PowerShell 7+ and Azure AD app registration with Graph API permissions
 
-## Author
-
-[![GitHub](https://img.shields.io/badge/GitHub-Thugney-181717?style=for-the-badge&logo=github)](https://github.com/Thugney/)
-[![X](https://img.shields.io/badge/X-@eriteach-000000?style=for-the-badge&logo=x)](https://x.com/eriteach)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-eriteach-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/eriteach/)
