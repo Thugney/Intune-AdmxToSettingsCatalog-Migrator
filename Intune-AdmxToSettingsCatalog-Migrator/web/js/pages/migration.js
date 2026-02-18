@@ -261,6 +261,12 @@ async function runMigration(whatIf = false) {
         logLine('migration-log', `CREATING: "${targetName}" with ${settingsToAdd.length} settings...`);
         const desc = `${policy.description || ''}\n${marker}`.trim();
 
+        // Log payload for debugging
+        if (settingsToAdd.length > 0) {
+          console.log('[Migration] Create payload settings:', JSON.stringify(settingsToAdd, null, 2));
+          logLine('migration-log', `First setting ID: ${settingsToAdd[0]?.settingInstance?.settingDefinitionId || 'unknown'}`);
+        }
+
         const newPolicy = await createSettingsCatalogPolicy(targetName, desc, settingsToAdd);
         logLine('migration-log', `Created policy: ${newPolicy.id}`);
 

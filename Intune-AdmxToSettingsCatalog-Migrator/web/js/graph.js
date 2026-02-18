@@ -49,7 +49,20 @@ async function graphRequest(method, url, body = null, extraHeaders = {}) {
       if (!response.ok) {
         const errText = await response.text();
         let errMsg = `Graph API ${response.status}`;
-        try { errMsg += ': ' + JSON.parse(errText).error.message; } catch {}
+        try {
+          const errJson = JSON.parse(errText);
+          const err = errJson.error || {};
+          errMsg += ': ' + (err.message || errText);
+          // Include inner error details and target for debugging
+          if (err.details) errMsg += ' | Details: ' + JSON.stringify(err.details);
+          if (err.innerError) {
+            const inner = err.innerError;
+            if (inner.message) errMsg += ' | Inner: ' + inner.message;
+            if (inner.date) errMsg += ' (' + inner.date + ')';
+          }
+        } catch {
+          errMsg += ': ' + errText;
+        }
         throw new Error(errMsg);
       }
 
@@ -182,20 +195,47 @@ export async function getSettingsCatalogPolicies() {
 }
 
 export async function createSettingsCatalogPolicy(name, description, settings = [], platform = 'windows10', technologies = 'mdm') {
-  return graphPost('/deviceManagement/configurationPolicies', {
+  // Filter out any null/undefined entries from settings
+  const validSettings = settings.filter(s => s && s.settingInstance);
+
+  const body = {
+    '@odata.type': '#microsoft.graph.deviceManagementConfigurationPolicy',
     name,
     description,
     platforms: platform,
     technologies,
     roleScopeTagIds: ['0'],
     templateReference: {
+      '@odata.type': 'microsoft.graph.deviceManagementConfigurationPolicyTemplateReference',
       templateId: '',
-      templateFamily: 'none',
-      templateDisplayName: null,
-      templateDisplayVersion: null
+      templateFamily: 'none'
     },
-    settings
-  });
+    settings: validSettings
+  };
+
+  console.log('[Graph] Creating policy with body:', JSON.stringify(body, null, 2));
+
+  try {
+    return await graphPost('/deviceManagement/configurationPolicies', body);
+  } catch (err) {
+    // If creation with settings fails, try without settings then add them individually
+    if (err.message.includes('400') && validSettings.length > 0) {
+      console.warn('[Graph] Create with settings failed, retrying without settings:', err.message);
+      const policy = await graphPost('/deviceManagement/configurationPolicies', { ...body, settings: [] });
+
+      // Add settings one at a time via the settings relationship endpoint
+      for (const s of validSettings) {
+        try {
+          await graphPost(`/deviceManagement/configurationPolicies/${policy.id}/settings`, s);
+        } catch (settingErr) {
+          console.warn(`[Graph] Failed to add setting ${s.settingInstance?.settingDefinitionId}:`, settingErr.message);
+        }
+      }
+
+      return policy;
+    }
+    throw err;
+  }
 }
 
 export async function assignSettingsCatalogPolicy(policyId, assignments) {
