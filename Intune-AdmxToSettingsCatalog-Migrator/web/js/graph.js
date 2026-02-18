@@ -110,43 +110,67 @@ export async function getAdmxDefinitionValues(policyId) {
   );
 }
 
+// Track search errors for diagnostics (exposed on window for debug)
+const _searchErrors = [];
+export function getSearchErrors() { return _searchErrors; }
+
 export async function searchSettingsCatalog(query) {
-  // Strategy 1: $search with ConsistencyLevel header
+  const safe = query.replace(/'/g, "''");
   let results = [];
+
+  // Strategy 1: $filter with contains() on displayName (most reliable per MS docs)
   try {
     const r = await graphGet(
-      `/deviceManagement/configurationSettings?$search="${encodeURIComponent(query)}"`,
+      `/deviceManagement/configurationSettings?$filter=contains(displayName,'${safe}')&$top=25`
+    );
+    results = r && r.value ? r.value : [];
+  } catch (e) {
+    _searchErrors.push({ strategy: 'filter-displayName', query, error: e.message });
+  }
+
+  if (results.length > 0) return results;
+
+  // Strategy 2: $filter with contains() on id (SC setting IDs are descriptive strings
+  // like "device_vendor_msft_policy_config_admx_settingname")
+  const idQuery = safe.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+  try {
+    const r = await graphGet(
+      `/deviceManagement/configurationSettings?$filter=contains(id,'${idQuery}')&$top=25`
+    );
+    results = r && r.value ? r.value : [];
+  } catch (e) {
+    _searchErrors.push({ strategy: 'filter-id', query: idQuery, error: e.message });
+  }
+
+  if (results.length > 0) return results;
+
+  // Strategy 3: $search with ConsistencyLevel header (may not be supported on all tenants)
+  try {
+    const r = await graphGet(
+      `/deviceManagement/configurationSettings?$search="${encodeURIComponent(query)}"&$top=25`,
       { 'ConsistencyLevel': 'eventual' }
     );
     results = r && r.value ? r.value : [];
-  } catch { /* ignore */ }
+  } catch (e) {
+    _searchErrors.push({ strategy: '$search', query, error: e.message });
+  }
 
   if (results.length > 0) return results;
 
-  // Strategy 2: $filter with contains() on displayName
-  try {
-    const safe = query.replace(/'/g, "''");
-    const r = await graphGet(
-      `/deviceManagement/configurationSettings?$filter=contains(displayName,'${encodeURIComponent(safe)}')`
-    );
-    results = r && r.value ? r.value : [];
-  } catch { /* ignore */ }
-
-  if (results.length > 0) return results;
-
-  // Strategy 3: keyword search - try individual significant words (4+ chars) from the query
-  const words = query.split(/\s+/).filter(w => w.length >= 4 && !/^(configure|enable|disable|allow|with|from|that|this|have|been|will|your|each)$/i.test(w));
-  if (words.length >= 2) {
-    // Try pairs of the most significant words
-    const topWords = words.slice(0, 3);
-    for (let i = 0; i < topWords.length && results.length === 0; i++) {
-      try {
-        const r = await graphGet(
-          `/deviceManagement/configurationSettings?$search="${encodeURIComponent(topWords[i])}"`,
-          { 'ConsistencyLevel': 'eventual' }
-        );
-        results = r && r.value ? r.value : [];
-      } catch { /* ignore */ }
+  // Strategy 4: try individual significant words with $filter contains on displayName
+  const words = query.split(/\s+/).filter(w =>
+    w.length >= 4 && !/^(configure|enable|disable|allow|with|from|that|this|have|been|will|your|each|turn|specify|set)$/i.test(w)
+  );
+  for (const word of words.slice(0, 3)) {
+    if (results.length > 0) break;
+    const wordSafe = word.replace(/'/g, "''");
+    try {
+      const r = await graphGet(
+        `/deviceManagement/configurationSettings?$filter=contains(displayName,'${wordSafe}')&$top=25`
+      );
+      results = r && r.value ? r.value : [];
+    } catch (e) {
+      _searchErrors.push({ strategy: 'filter-word', query: word, error: e.message });
     }
   }
 
