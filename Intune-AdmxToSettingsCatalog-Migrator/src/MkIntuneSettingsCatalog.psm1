@@ -39,6 +39,7 @@ function Get-MkSettingsCatalogPolicyByMarker {
     Finds an existing Settings Catalog policy that contains the source marker in its description.
   .DESCRIPTION
     Used for idempotency: checks if a policy was already created by this tool for a given source policy ID.
+    Uses $filter on the description field to avoid fetching every policy in the tenant.
   #>
   [CmdletBinding()]
   param(
@@ -48,13 +49,28 @@ function Get-MkSettingsCatalogPolicyByMarker {
     [Parameter(Mandatory=$true)][string]$SourceId
   )
   $base = "https://graph.microsoft.com/$ApiVersion/deviceManagement"
-  $pols = Get-MkGraphPaged -Token $Token -Uri "$base/configurationPolicies"
-  foreach ($p in $pols) {
-    if ($p.description -and $p.description -match [regex]::Escape($MarkerKey) -and $p.description -match [regex]::Escape($SourceId)) {
-      return $p
+  $marker = "$MarkerKey=$SourceId"
+
+  # Try server-side filter first to avoid fetching all policies
+  try {
+    $filterUri = "$base/configurationPolicies?`$filter=contains(description,'$marker')"
+    $filtered = Get-MkGraphPaged -Token $Token -Uri $filterUri
+    foreach ($p in $filtered) {
+      if ($p.description -and $p.description -match [regex]::Escape($MarkerKey) -and $p.description -match [regex]::Escape($SourceId)) {
+        return $p
+      }
     }
+    return $null
+  } catch {
+    # Fall back to client-side filtering if $filter is not supported
+    $pols = Get-MkGraphPaged -Token $Token -Uri "$base/configurationPolicies"
+    foreach ($p in $pols) {
+      if ($p.description -and $p.description -match [regex]::Escape($MarkerKey) -and $p.description -match [regex]::Escape($SourceId)) {
+        return $p
+      }
+    }
+    return $null
   }
-  return $null
 }
 
 function New-MkSettingsCatalogPolicy {

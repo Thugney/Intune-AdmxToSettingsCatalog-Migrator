@@ -118,7 +118,19 @@ try {
     "Map" {
       $exportFile = Join-Path $outDir "export.admx.json"
       if (-not (Test-Path $exportFile)) { throw "Missing export file: $exportFile. Run Mode=Export first." }
-      Build-MkMappingSuggestions -Token $token -ApiVersion $cfg.Graph.ApiVersion -ExportFile $exportFile -OutFile (Join-Path $outDir "mapping.suggestions.json") -LogPath $logPath
+      $mapParams = @{
+        Token = $token
+        ApiVersion = $cfg.Graph.ApiVersion
+        ExportFile = $exportFile
+        OutFile = (Join-Path $outDir "mapping.suggestions.json")
+        LogPath = $logPath
+      }
+      # Optional: filter to specific policy IDs from config
+      if ($cfg.Migration.PSObject.Properties.Name -contains "PolicyIds" -and $cfg.Migration.PolicyIds.Count -gt 0) {
+        $mapParams.PolicyIds = @($cfg.Migration.PolicyIds)
+        Write-Log -Level "INFO" -Message "PolicyIds filter active: targeting $($mapParams.PolicyIds.Count) policy(ies)" -LogPath $logPath
+      }
+      Build-MkMappingSuggestions @mapParams
       Write-Log -Level "INFO" -Message "Mapping suggestions created. Curate output\mapping.json for deterministic migrations." -LogPath $logPath
     }
 
@@ -135,9 +147,23 @@ try {
         Write-Log -Level "INFO" -Message "Pre-migration backup saved to: $backupDir" -LogPath $logPath
       }
 
-      Invoke-MkMigration -Token $token -ApiVersion $cfg.Graph.ApiVersion -ExportFile $exportFile -MappingFile $mappingFile `
-        -TargetNamePrefix $cfg.Migration.TargetNamePrefix -SourceMarkerKey $cfg.Migration.SourceMarkerKey -SkipUnmapped:$cfg.Migration.SkipUnmapped `
-        -OutManifest (Join-Path $outDir "migration.manifest.json") -LogPath $logPath -WhatIf:$WhatIfPreference
+      $migrateParams = @{
+        Token = $token
+        ApiVersion = $cfg.Graph.ApiVersion
+        ExportFile = $exportFile
+        MappingFile = $mappingFile
+        TargetNamePrefix = $cfg.Migration.TargetNamePrefix
+        SourceMarkerKey = $cfg.Migration.SourceMarkerKey
+        SkipUnmapped = $cfg.Migration.SkipUnmapped
+        OutManifest = (Join-Path $outDir "migration.manifest.json")
+        LogPath = $logPath
+      }
+      # Optional: filter to specific policy IDs from config
+      if ($cfg.Migration.PSObject.Properties.Name -contains "PolicyIds" -and $cfg.Migration.PolicyIds.Count -gt 0) {
+        $migrateParams.PolicyIds = @($cfg.Migration.PolicyIds)
+        Write-Log -Level "INFO" -Message "PolicyIds filter active: migrating $($migrateParams.PolicyIds.Count) policy(ies)" -LogPath $logPath
+      }
+      Invoke-MkMigration @migrateParams -WhatIf:$WhatIfPreference
     }
 
     "Rollback" {
