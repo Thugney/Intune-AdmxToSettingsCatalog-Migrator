@@ -9,11 +9,18 @@ function Build-MkMappingSuggestions {
     [Parameter(Mandatory=$true)][ValidateSet("beta","v1.0")] [string]$ApiVersion,
     [Parameter(Mandatory=$true)][string]$ExportFile,
     [Parameter(Mandatory=$true)][string]$OutFile,
-    [Parameter(Mandatory=$true)][string]$LogPath
+    [Parameter(Mandatory=$true)][string]$LogPath,
+    [Parameter()][string[]]$PolicyIds
   )
 
   $data = Get-Content $ExportFile -Raw | ConvertFrom-Json
   $suggestions = @()
+
+  # Filter to specific policies if PolicyIds was provided
+  if ($PolicyIds -and $PolicyIds.Count -gt 0) {
+    $data = @($data | Where-Object { $PolicyIds -contains $_.id })
+    Write-Log -Level "INFO" -Message "Filtering to $($data.Count) policy(ies) matching PolicyIds" -LogPath $LogPath
+  }
 
   foreach ($p in $data) {
     foreach ($dv in $p.definitionValues) {
@@ -91,11 +98,18 @@ function Invoke-MkMigration {
     [Parameter(Mandatory=$true)][string]$SourceMarkerKey,
     [Parameter(Mandatory=$true)][bool]$SkipUnmapped,
     [Parameter(Mandatory=$true)][string]$OutManifest,
-    [Parameter(Mandatory=$true)][string]$LogPath
+    [Parameter(Mandatory=$true)][string]$LogPath,
+    [Parameter()][string[]]$PolicyIds
   )
 
   $export = Get-Content $ExportFile -Raw | ConvertFrom-Json
   $mapping = Get-Content $MappingFile -Raw | ConvertFrom-Json
+
+  # Filter to specific policies if PolicyIds was provided
+  if ($PolicyIds -and $PolicyIds.Count -gt 0) {
+    $export = @($export | Where-Object { $PolicyIds -contains $_.id })
+    Write-Log -Level "INFO" -Message "Filtering migration to $($export.Count) policy(ies) matching PolicyIds" -LogPath $LogPath
+  }
 
   # mapping.entries: array with sourcePolicyId, sourceDefinitionValueId, targetSettingDefinitionId, settingPayload
   $mapIndex = @{}
