@@ -1,6 +1,6 @@
 // mapping.js - Settings mapping page
 import { state, showToast, escapeHtml, downloadJson, saveState } from '../app.js';
-import { searchSettingsCatalog, getSearchErrors } from '../graph.js';
+import { searchSettingsCatalog, getSearchErrors, clearSearchCache } from '../graph.js';
 
 let activeFilter = 'all';
 
@@ -169,6 +169,9 @@ async function generateMapping() {
   document.getElementById('mapping-results').classList.add('hidden');
 
   try {
+    // Clear search cache from any previous run
+    clearSearchCache();
+
     const suggestions = [];
     let totalSettings = 0;
     state.exportData.forEach(p => totalSettings += (p.definitionValues || []).length);
@@ -178,79 +181,84 @@ async function generateMapping() {
     const progressBar = document.getElementById('mapping-progress-bar');
     const progressText = document.getElementById('mapping-progress-text');
 
+    // Build a flat list of all setting tasks to process
+    const tasks = [];
     for (const policy of state.exportData) {
       for (const dv of (policy.definitionValues || [])) {
-        processed++;
-        const pct = Math.round((processed / totalSettings) * 100);
-        progressBar.style.width = pct + '%';
-        progressText.textContent = `${processed} / ${totalSettings}`;
+        tasks.push({ policy, dv });
+      }
+    }
 
-        const settingName = getSettingName(dv);
-        const queries = buildSearchQueries(dv);
-        const sourceValues = extractSourceValues(dv);
+    // Process a single setting: search, score, return suggestion object
+    async function processOneSetting({ policy, dv }) {
+      const settingName = getSettingName(dv);
+      const queries = buildSearchQueries(dv);
+      const sourceValues = extractSourceValues(dv);
 
-        // Try each search query until we find candidates
-        let candidates = [];
-        let usedQuery = '';
-        for (const q of queries) {
-          if (candidates.length > 0) break;
-          usedQuery = q;
-          try {
-            candidates = await searchSettingsCatalog(q);
-          } catch (err) {
-            apiErrors++;
-            candidates = [];
-          }
+      let candidates = [];
+      let usedQuery = '';
+      let hadError = false;
+
+      // Try each search query until we find candidates
+      for (const q of queries) {
+        if (candidates.length > 0) break;
+        usedQuery = q;
+        try {
+          candidates = await searchSettingsCatalog(q);
+        } catch {
+          hadError = true;
+          candidates = [];
         }
+      }
 
-        // If no queries could be built (no definition data), note it
-        if (queries.length === 0) {
-          usedQuery = settingName;
-          try {
-            candidates = await searchSettingsCatalog(settingName.replace(/"/g, ''));
-          } catch {
-            apiErrors++;
-          }
+      // Fallback if no queries could be built
+      if (queries.length === 0) {
+        usedQuery = settingName;
+        try {
+          candidates = await searchSettingsCatalog(settingName.replace(/"/g, ''));
+        } catch {
+          hadError = true;
         }
+      }
 
-        const top = (candidates || []).slice(0, 5).map(c => ({
-          settingDefinitionId: c.id,
-          displayName: c.displayName,
-          description: c.description || '',
-          odataType: c['@odata.type'] || ''
-        }));
+      const top = (candidates || []).slice(0, 5).map(c => ({
+        settingDefinitionId: c.id,
+        displayName: c.displayName,
+        description: c.description || '',
+        odataType: c['@odata.type'] || ''
+      }));
 
-        // Determine confidence based on name similarity and setting ID plausibility
-        let confidence = 'none';
-        if (top.length > 0) {
-          const bestName = (top[0].displayName || '').toLowerCase();
-          const bestId = (top[0].settingDefinitionId || '').toLowerCase();
-          const srcName = settingName.toLowerCase();
+      // Determine confidence based on name similarity and setting ID plausibility
+      let confidence = 'none';
+      if (top.length > 0) {
+        const bestName = (top[0].displayName || '').toLowerCase();
+        const bestId = (top[0].settingDefinitionId || '').toLowerCase();
+        const srcName = settingName.toLowerCase();
 
-          // Bonus: does the setting ID look like a proper Windows ADMX setting?
-          const isAdmxId = bestId.includes('_policy_config_') || bestId.includes('admx_');
+        const isAdmxId = bestId.includes('_policy_config_') || bestId.includes('admx_');
 
-          if (bestName === srcName) {
+        if (bestName === srcName) {
+          confidence = 'high';
+        } else if (bestName.includes(srcName) || srcName.includes(bestName)) {
+          confidence = isAdmxId ? 'high' : 'medium';
+        } else {
+          const srcWords = new Set(srcName.split(/\s+/).filter(w => w.length > 3));
+          const bestWords = new Set(bestName.split(/\s+/).filter(w => w.length > 3));
+          const overlap = [...srcWords].filter(w => bestWords.has(w));
+          if (overlap.length >= 2 && isAdmxId) {
             confidence = 'high';
-          } else if (bestName.includes(srcName) || srcName.includes(bestName)) {
-            confidence = isAdmxId ? 'high' : 'medium';
+          } else if (overlap.length >= 2) {
+            confidence = 'medium';
           } else {
-            const srcWords = new Set(srcName.split(/\s+/).filter(w => w.length > 3));
-            const bestWords = new Set(bestName.split(/\s+/).filter(w => w.length > 3));
-            const overlap = [...srcWords].filter(w => bestWords.has(w));
-            if (overlap.length >= 2 && isAdmxId) {
-              confidence = 'high';
-            } else if (overlap.length >= 2) {
-              confidence = 'medium';
-            } else {
-              confidence = 'medium';
-            }
+            confidence = 'medium';
           }
         }
+      }
 
-        const categoryPath = (dv.definition && dv.definition.categoryPath) || '';
+      const categoryPath = (dv.definition && dv.definition.categoryPath) || '';
 
-        suggestions.push({
+      return {
+        suggestion: {
           sourcePolicyId: policy.id,
           sourcePolicyName: policy.displayName,
           sourceDefinitionValueId: dv.id,
@@ -261,8 +269,26 @@ async function generateMapping() {
           recommended: top[0] || null,
           confidence,
           searchQuery: usedQuery
-        });
+        },
+        hadError
+      };
+    }
+
+    // Process settings in concurrent batches of 3 to speed up mapping
+    const BATCH_SIZE = 3;
+    for (let i = 0; i < tasks.length; i += BATCH_SIZE) {
+      const batch = tasks.slice(i, i + BATCH_SIZE);
+      const results = await Promise.all(batch.map(t => processOneSetting(t)));
+
+      for (const { suggestion, hadError } of results) {
+        suggestions.push(suggestion);
+        if (hadError) apiErrors++;
       }
+
+      processed += batch.length;
+      const pct = Math.round((processed / totalSettings) * 100);
+      progressBar.style.width = pct + '%';
+      progressText.textContent = `${processed} / ${totalSettings}`;
     }
 
     state.mappingSuggestions = suggestions;

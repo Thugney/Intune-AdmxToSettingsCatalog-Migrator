@@ -167,7 +167,15 @@ function filterByPlatform(results, platform) {
   });
 }
 
+// Cache for search results to avoid duplicate API calls for the same query.
+// Cleared when a new mapping run starts.
+const _searchCache = new Map();
+export function clearSearchCache() { _searchCache.clear(); }
+
 export async function searchSettingsCatalog(query, platform = 'windows10') {
+  const cacheKey = `${query}|${platform}`;
+  if (_searchCache.has(cacheKey)) return _searchCache.get(cacheKey);
+
   const safe = query.replace(/'/g, "''");
   let results = [];
 
@@ -181,7 +189,7 @@ export async function searchSettingsCatalog(query, platform = 'windows10') {
     _searchErrors.push({ strategy: 'filter-displayName', query, error: e.message });
   }
 
-  if (results.length > 0) return results;
+  if (results.length > 0) { _searchCache.set(cacheKey, results); return results; }
 
   // Strategy 2: $filter with contains() on id (SC setting IDs are descriptive strings
   // like "device_vendor_msft_policy_config_admx_settingname")
@@ -195,38 +203,27 @@ export async function searchSettingsCatalog(query, platform = 'windows10') {
     _searchErrors.push({ strategy: 'filter-id', query: idQuery, error: e.message });
   }
 
-  if (results.length > 0) return results;
+  if (results.length > 0) { _searchCache.set(cacheKey, results); return results; }
 
-  // Strategy 3: $search with ConsistencyLevel header (may not be supported on all tenants)
-  try {
-    const r = await graphGet(
-      `/deviceManagement/configurationSettings?$search="${encodeURIComponent(query)}"&$top=50`,
-      { 'ConsistencyLevel': 'eventual' }
-    );
-    results = filterByPlatform(r && r.value ? r.value : [], platform);
-  } catch (e) {
-    _searchErrors.push({ strategy: '$search', query, error: e.message });
-  }
-
-  if (results.length > 0) return results;
-
-  // Strategy 4: try individual significant words with $filter contains on displayName
+  // Strategy 3: try the most significant word from the query with $filter on displayName.
+  // This is faster than $search and catches cases where the full name is too specific.
   const words = query.split(/\s+/).filter(w =>
     w.length >= 4 && !/^(configure|enable|disable|allow|with|from|that|this|have|been|will|your|each|turn|specify|set)$/i.test(w)
   );
-  for (const word of words.slice(0, 3)) {
-    if (results.length > 0) break;
-    const wordSafe = word.replace(/'/g, "''");
+  if (words.length > 0 && results.length === 0) {
+    const wordSafe = words[0].replace(/'/g, "''");
     try {
       const r = await graphGet(
         `/deviceManagement/configurationSettings?$filter=contains(displayName,'${wordSafe}')&$top=50`
       );
       results = filterByPlatform(r && r.value ? r.value : [], platform);
     } catch (e) {
-      _searchErrors.push({ strategy: 'filter-word', query: word, error: e.message });
+      _searchErrors.push({ strategy: 'filter-word', query: words[0], error: e.message });
     }
   }
 
+  // Cache even empty results to avoid repeating failed searches
+  _searchCache.set(cacheKey, results);
   return results;
 }
 
