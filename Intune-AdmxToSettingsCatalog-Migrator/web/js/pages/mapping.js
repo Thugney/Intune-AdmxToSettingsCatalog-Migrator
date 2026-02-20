@@ -52,12 +52,16 @@ function buildSearchQueries(dv) {
       queries.push(stripped);
     }
 
-    // Tertiary: use last segment of categoryPath + display name keywords
+    // Tertiary: ADMX area name from categoryPath (often the best match for
+    // Settings Catalog IDs like "admx_winget~policy~...")
     if (def.categoryPath) {
       const segments = def.categoryPath.replace(/\\/g, '/').split('/').filter(Boolean);
       const lastSeg = segments[segments.length - 1];
-      if (lastSeg && !name.toLowerCase().includes(lastSeg.toLowerCase())) {
-        queries.push(`${lastSeg} ${stripped || name}`);
+      if (lastSeg && lastSeg.length >= 3) {
+        // Try area name alone — often finds ADMX-backed SC settings directly
+        if (!queries.some(q => q.toLowerCase() === lastSeg.toLowerCase())) {
+          queries.push(lastSeg);
+        }
       }
     }
   }
@@ -326,6 +330,20 @@ async function generateMapping() {
 // ==================== INDIVIDUAL MAPPING SEARCH ====================
 let currentSearchIndex = -1;
 
+// Build a smarter default search term from the ADMX setting metadata.
+// Uses the category path to extract the ADMX area name, which maps better
+// to Settings Catalog IDs (e.g., "Winget" from "\Windows Components\Winget").
+function buildDefaultSearchTerm(s) {
+  const catPath = s.sourceCategoryPath || '';
+  if (catPath) {
+    const segments = catPath.replace(/\\/g, '/').split('/').filter(Boolean);
+    // Use the last meaningful segment (the ADMX area name)
+    const area = segments[segments.length - 1] || '';
+    if (area && area.length >= 3) return area;
+  }
+  return s.sourceSettingName;
+}
+
 function openSearchModal(suggestionIndex) {
   currentSearchIndex = suggestionIndex;
   const s = state.mappingSuggestions[suggestionIndex];
@@ -335,8 +353,18 @@ function openSearchModal(suggestionIndex) {
   const sourceLabel = document.getElementById('mapping-search-source');
 
   sourceLabel.textContent = `Mapping: ${s.sourceSettingName}`;
-  input.value = s.sourceSettingName;
-  resultsContainer.innerHTML = '<div class="p-8 text-center text-gray-400 text-sm">Enter a search term and click Search</div>';
+  input.value = buildDefaultSearchTerm(s);
+
+  // Show search tips with the category path info
+  const catInfo = s.sourceCategoryPath
+    ? `<div class="text-xs text-gray-500 mb-1">Category: <span class="font-mono">${escapeHtml(s.sourceCategoryPath)}</span></div>`
+    : '';
+  resultsContainer.innerHTML = `
+    <div class="p-6 text-center text-gray-400 text-sm space-y-2">
+      ${catInfo}
+      <div>Search by ADMX area name (e.g., "Winget", "BitLocker", "OneDrive").</div>
+      <div class="text-xs">Tip: Settings Catalog IDs for ADMX look like <span class="font-mono">device_vendor_msft_policy_config_admx_&lt;area&gt;</span></div>
+    </div>`;
   modal.classList.remove('hidden');
   input.focus();
   input.select();
@@ -362,7 +390,17 @@ function initSearchModal() {
     try {
       const results = await searchSettingsCatalog(query.replace(/"/g, ''));
       if (!results || results.length === 0) {
-        resultsContainer.innerHTML = '<div class="p-8 text-center text-gray-400 text-sm">No results found. Try different keywords.</div>';
+        const s = currentSearchIndex >= 0 ? state.mappingSuggestions[currentSearchIndex] : null;
+        const catPath = s && s.sourceCategoryPath ? s.sourceCategoryPath : '';
+        const segments = catPath.replace(/\\/g, '/').split('/').filter(Boolean);
+        const area = segments.length > 0 ? segments[segments.length - 1] : '';
+        const hint = area ? `Try searching for "<strong>${escapeHtml(area)}</strong>" or check in Intune Portal > Settings Catalog.` : 'Try shorter keywords or check in Intune Portal > Settings Catalog.';
+        resultsContainer.innerHTML = `
+          <div class="p-6 text-center text-gray-400 text-sm space-y-2">
+            <div>No Windows settings found for this search.</div>
+            <div>${hint}</div>
+            <div class="text-xs">Note: Some custom ADMX settings may not have a Settings Catalog equivalent yet.</div>
+          </div>`;
         return;
       }
 
