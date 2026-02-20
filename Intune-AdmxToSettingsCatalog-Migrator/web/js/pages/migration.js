@@ -236,15 +236,33 @@ async function runMigration(whatIf = false) {
         continue;
       }
 
-      // Gather mapped settings
+      // Gather mapped settings, filtering out non-Windows settings as a safety net
       const settingsToAdd = [];
       let unmappedCount = 0;
+      let platformFilteredCount = 0;
+
+      // Known non-Windows setting ID prefixes
+      const nonWindowsPrefixes = ['com.apple.', 'ade_', 'appleosxconfiguration', 'ios_', 'android'];
 
       for (const dv of (policy.definitionValues || [])) {
         const key = `${policy.id}|${dv.id}`;
         const mapping = mapIndex[key];
         if (mapping && mapping.settingPayload) {
-          settingsToAdd.push(mapping.settingPayload);
+          // Validate the setting is actually a Windows setting
+          const sid = (mapping.settingPayload.settingInstance?.settingDefinitionId || '').toLowerCase();
+          const isNonWindows = nonWindowsPrefixes.some(p => sid.startsWith(p));
+          if (isNonWindows) {
+            platformFilteredCount++;
+            logLine('migration-log', `SKIP SETTING: "${sid}" is not a Windows setting (platform mismatch)`, 'warning');
+            manifest.skipped.push({
+              sourcePolicyId: policy.id,
+              sourceDefinitionValueId: dv.id,
+              reason: 'platform-mismatch',
+              settingId: sid
+            });
+          } else {
+            settingsToAdd.push(mapping.settingPayload);
+          }
         } else {
           unmappedCount++;
           manifest.skipped.push({
@@ -253,6 +271,10 @@ async function runMigration(whatIf = false) {
             reason: mapping ? 'no-payload' : 'unmapped'
           });
         }
+      }
+
+      if (platformFilteredCount > 0) {
+        logLine('migration-log', `Filtered out ${platformFilteredCount} non-Windows settings for "${policy.displayName}"`, 'warning');
       }
 
       // Graph API requires at least 1 setting - skip policies with none

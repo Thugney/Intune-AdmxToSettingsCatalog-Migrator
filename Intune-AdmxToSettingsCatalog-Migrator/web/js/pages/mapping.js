@@ -32,13 +32,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Build search queries from ADMX definition metadata.
 // Returns an array of queries to try in order of specificity.
+// ADMX policies are always Windows, so queries are tailored for finding
+// the Windows Settings Catalog equivalent.
 function buildSearchQueries(dv) {
   const queries = [];
   const def = dv.definition;
 
-  // Primary: definition display name (the actual ADMX setting name)
   if (def && def.displayName) {
     const name = def.displayName.replace(/"/g, '');
+
+    // Primary: exact definition display name
     queries.push(name);
 
     // Secondary: strip common ADMX prefixes for broader match
@@ -217,20 +220,31 @@ async function generateMapping() {
           odataType: c['@odata.type'] || ''
         }));
 
-        // Determine confidence
+        // Determine confidence based on name similarity and setting ID plausibility
         let confidence = 'none';
         if (top.length > 0) {
           const bestName = (top[0].displayName || '').toLowerCase();
+          const bestId = (top[0].settingDefinitionId || '').toLowerCase();
           const srcName = settingName.toLowerCase();
+
+          // Bonus: does the setting ID look like a proper Windows ADMX setting?
+          const isAdmxId = bestId.includes('_policy_config_') || bestId.includes('admx_');
+
           if (bestName === srcName) {
             confidence = 'high';
           } else if (bestName.includes(srcName) || srcName.includes(bestName)) {
-            confidence = 'high';
+            confidence = isAdmxId ? 'high' : 'medium';
           } else {
             const srcWords = new Set(srcName.split(/\s+/).filter(w => w.length > 3));
             const bestWords = new Set(bestName.split(/\s+/).filter(w => w.length > 3));
             const overlap = [...srcWords].filter(w => bestWords.has(w));
-            confidence = overlap.length >= 2 ? 'high' : 'medium';
+            if (overlap.length >= 2 && isAdmxId) {
+              confidence = 'high';
+            } else if (overlap.length >= 2) {
+              confidence = 'medium';
+            } else {
+              confidence = 'medium';
+            }
           }
         }
 
