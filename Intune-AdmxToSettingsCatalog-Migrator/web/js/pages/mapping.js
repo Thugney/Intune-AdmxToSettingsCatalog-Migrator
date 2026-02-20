@@ -1,6 +1,6 @@
 // mapping.js - Settings mapping page
 import { state, showToast, escapeHtml, downloadJson, saveState } from '../app.js';
-import { searchSettingsCatalog, getSearchErrors, clearSearchCache } from '../graph.js';
+import { searchSettingsCatalog, searchSettingsCatalogByProduct, getSearchErrors, clearSearchCache } from '../graph.js';
 
 let activeFilter = 'all';
 
@@ -72,6 +72,86 @@ function buildSearchQueries(dv) {
   }
 
   return queries;
+}
+
+// Map well-known product names (from ADMX categoryPath) to Settings Catalog
+// ID patterns. Product names like "Microsoft Edge" are NOT localized in
+// categoryPath even on non-English tenants.
+const PRODUCT_SC_PATTERNS = {
+  'microsoft edge': 'microsoft_edge~policy~',
+  'google chrome': 'googlechrome~policy~',
+  'internet explorer': 'internetexplorer_',
+  'onedrive': 'onedrivengscv2~',
+  'windows defender antivirus': 'defender_antivirus',
+  'bitlocker drive encryption': 'bitlocker_',
+  'bitlocker': 'bitlocker_',
+  'windows update': 'windowsupdate~',
+  'remote desktop': 'remotedesktopservices~',
+  'microsoft office': 'office16v2~',
+  'windows ink workspace': 'windowsinkworkspace',
+};
+
+// Extract a Settings Catalog ID pattern from the ADMX category path.
+// Product names in categoryPath are typically English even on localized tenants.
+function extractProductHint(categoryPath) {
+  if (!categoryPath) return '';
+  const lower = categoryPath.toLowerCase();
+
+  // Try known product patterns first
+  for (const [product, pattern] of Object.entries(PRODUCT_SC_PATTERNS)) {
+    if (lower.includes(product)) return pattern;
+  }
+
+  // Dynamic fallback: try the 2nd path segment as an ID fragment
+  // e.g., "\Windows Components\Some Product\..." → "some_product"
+  const segments = categoryPath.replace(/\\/g, '/').split('/').filter(Boolean);
+  if (segments.length >= 2) {
+    const seg = segments[1];
+    // Only use if it looks like an English product name (no non-ASCII chars)
+    if (seg.length >= 3 && /^[a-zA-Z0-9 _\-]+$/.test(seg)) {
+      return seg.toLowerCase().replace(/\s+/g, '_');
+    }
+  }
+
+  return '';
+}
+
+// Rank candidates by relevance to the source setting name.
+// Used when product-specific search returns many results and we need to
+// pick the best match. Works across languages by matching ID tokens.
+function rankCandidatesByRelevance(candidates, sourceName) {
+  const srcLower = sourceName.toLowerCase();
+  const srcTokens = srcLower.split(/[\s\-_\/(),.]+/).filter(t => t.length >= 3);
+
+  return candidates
+    .map(c => {
+      const id = (c.id || '').toLowerCase();
+      const name = (c.displayName || '').toLowerCase();
+      let score = 0;
+
+      // Exact name match (works if Accept-Language returned English)
+      if (name === srcLower) score += 100;
+      // Partial containment
+      else if (name.includes(srcLower) || srcLower.includes(name)) score += 50;
+
+      // Token matching against candidate name and ID
+      for (const token of srcTokens) {
+        if (name.includes(token)) score += 5;
+        if (id.includes(token)) score += 3;
+        // 4-char prefix match (catches cross-language similarity, e.g. "geo")
+        if (token.length >= 5) {
+          const prefix = token.substring(0, 4);
+          if (id.includes(prefix)) score += 1;
+        }
+      }
+
+      // Prefer ADMX-backed settings
+      if (id.includes('_policy_config_') || id.includes('admx_')) score += 2;
+
+      return { candidate: c, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .map(r => r.candidate);
 }
 
 // Determine the best setting name for display purposes
@@ -198,12 +278,15 @@ async function generateMapping() {
       const settingName = getSettingName(dv);
       const queries = buildSearchQueries(dv);
       const sourceValues = extractSourceValues(dv);
+      const categoryPath = (dv.definition && dv.definition.categoryPath) || '';
+      const productHint = extractProductHint(categoryPath);
 
       let candidates = [];
       let usedQuery = '';
       let hadError = false;
+      let usedProductFallback = false;
 
-      // Try each search query until we find candidates
+      // Try each text-based search query until we find candidates
       for (const q of queries) {
         if (candidates.length > 0) break;
         usedQuery = q;
@@ -220,6 +303,21 @@ async function generateMapping() {
         usedQuery = settingName;
         try {
           candidates = await searchSettingsCatalog(settingName.replace(/"/g, ''));
+        } catch {
+          hadError = true;
+        }
+      }
+
+      // If text search failed but we know the product, try product-specific
+      // ID search. This handles localized tenants where display names are
+      // in Norwegian, German, etc. and don't match English SC names.
+      if (candidates.length === 0 && productHint) {
+        usedQuery = `[product: ${productHint}]`;
+        usedProductFallback = true;
+        try {
+          const productResults = await searchSettingsCatalogByProduct(productHint);
+          // Rank by relevance to source name (best-effort cross-language matching)
+          candidates = rankCandidatesByRelevance(productResults, settingName);
         } catch {
           hadError = true;
         }
@@ -253,13 +351,15 @@ async function generateMapping() {
             confidence = 'high';
           } else if (overlap.length >= 2) {
             confidence = 'medium';
+          } else if (usedProductFallback) {
+            // Product fallback results need manual review — we found settings
+            // in the right product area but couldn't confirm the exact match
+            confidence = 'medium';
           } else {
             confidence = 'medium';
           }
         }
       }
-
-      const categoryPath = (dv.definition && dv.definition.categoryPath) || '';
 
       return {
         suggestion: {
@@ -337,7 +437,12 @@ function buildDefaultSearchTerm(s) {
   const catPath = s.sourceCategoryPath || '';
   if (catPath) {
     const segments = catPath.replace(/\\/g, '/').split('/').filter(Boolean);
-    // Use the last meaningful segment (the ADMX area name)
+    // Prefer the product name (2nd segment, usually English even on localized tenants)
+    // e.g., "\Windows Components\Microsoft Edge\..." → "Microsoft Edge"
+    if (segments.length >= 2 && /^[a-zA-Z0-9 _\-]+$/.test(segments[1]) && segments[1].length >= 3) {
+      return segments[1];
+    }
+    // Fall back to last meaningful segment (the ADMX area name)
     const area = segments[segments.length - 1] || '';
     if (area && area.length >= 3) return area;
   }

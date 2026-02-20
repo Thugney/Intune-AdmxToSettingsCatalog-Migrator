@@ -118,8 +118,11 @@ export async function getAdmxAssignments(policyId) {
 }
 
 export async function getAdmxDefinitionValues(policyId) {
+  // Request English definitions via Accept-Language so that localized tenants
+  // (Norwegian, German, etc.) still get English displayNames for search matching.
   return graphGetPaged(
-    `/deviceManagement/groupPolicyConfigurations/${policyId}/definitionValues?$expand=definition($select=id,displayName,categoryPath,classType,policyType),presentationValues`
+    `/deviceManagement/groupPolicyConfigurations/${policyId}/definitionValues?$expand=definition($select=id,displayName,categoryPath,classType,policyType),presentationValues`,
+    { 'Accept-Language': 'en-US' }
   );
 }
 
@@ -198,6 +201,28 @@ export async function searchSettingsCatalog(query, platform = 'windows10') {
   }
 
   // Cache even empty results to avoid repeating failed searches
+  _searchCache.set(cacheKey, results);
+  return results;
+}
+
+// Search Settings Catalog by product ID pattern.
+// Used as a fallback when text-based search fails (e.g., localized display names).
+// Returns all settings whose ID contains the product pattern (e.g., "microsoft_edge~policy~").
+export async function searchSettingsCatalogByProduct(productIdPattern, platform = 'windows10') {
+  const cacheKey = `product:${productIdPattern}|${platform}`;
+  if (_searchCache.has(cacheKey)) return _searchCache.get(cacheKey);
+
+  const safe = productIdPattern.replace(/'/g, "''");
+  let results = [];
+  try {
+    const r = await graphGet(
+      `/deviceManagement/configurationSettings?$filter=contains(id,'${safe}')&$top=200`
+    );
+    results = filterByPlatform(r && r.value ? r.value : [], platform);
+  } catch (e) {
+    _searchErrors.push({ strategy: 'filter-product-id', query: productIdPattern, error: e.message });
+  }
+
   _searchCache.set(cacheKey, results);
   return results;
 }
