@@ -127,44 +127,19 @@ export async function getAdmxDefinitionValues(policyId) {
 const _searchErrors = [];
 export function getSearchErrors() { return _searchErrors; }
 
-// Known non-Windows setting ID prefixes. Settings starting with these are
-// macOS, iOS, or Android and must be excluded when migrating ADMX (Windows).
-const NON_WINDOWS_PREFIXES = [
-  'com.apple.',          // macOS / iOS
-  'ade_',                // Apple Device Enrollment
-  'appleosxconfiguration', // macOS configuration profiles
-  'ios_',                // iOS
-  'android',             // Android
-];
-
 // Check if a setting definition ID belongs to the Windows platform.
-// Windows SC IDs typically start with "device_vendor_msft_" or "user_vendor_msft_".
+// ALLOWLIST approach: Windows Settings Catalog IDs always contain "_vendor_msft_"
+// (e.g., "device_vendor_msft_policy_config_..." or "user_vendor_msft_policy_config_...").
+// No macOS (com.apple.*), iOS, or Android setting ever contains this pattern.
 function isWindowsSetting(settingId) {
   if (!settingId) return false;
-  const id = settingId.toLowerCase();
-  for (const prefix of NON_WINDOWS_PREFIXES) {
-    if (id.startsWith(prefix)) return false;
-  }
-  return true;
+  return settingId.toLowerCase().includes('_vendor_msft_');
 }
 
-// Filter search results to only include settings compatible with the given platform.
+// Filter search results to only include Windows settings.
 function filterByPlatform(results, platform) {
   if (!platform || platform !== 'windows10') return results;
-  return results.filter(r => {
-    const id = (r.id || '').toLowerCase();
-    // Exclude known non-Windows settings
-    if (!isWindowsSetting(id)) return false;
-    // If the result includes applicability info, also check that
-    if (r.applicability) {
-      const appStr = JSON.stringify(r.applicability).toLowerCase();
-      if (appStr.includes('macos') || appStr.includes('ios') || appStr.includes('android')) {
-        // Only exclude if it does NOT also mention windows
-        if (!appStr.includes('windows')) return false;
-      }
-    }
-    return true;
-  });
+  return results.filter(r => isWindowsSetting(r.id || ''));
 }
 
 // Cache for search results to avoid duplicate API calls for the same query.

@@ -236,22 +236,19 @@ async function runMigration(whatIf = false) {
         continue;
       }
 
-      // Gather mapped settings, filtering out non-Windows settings as a safety net
+      // Gather mapped settings, filtering out non-Windows settings as a safety net.
+      // Windows Settings Catalog IDs always contain "_vendor_msft_".
       const settingsToAdd = [];
       let unmappedCount = 0;
       let platformFilteredCount = 0;
-
-      // Known non-Windows setting ID prefixes
-      const nonWindowsPrefixes = ['com.apple.', 'ade_', 'appleosxconfiguration', 'ios_', 'android'];
 
       for (const dv of (policy.definitionValues || [])) {
         const key = `${policy.id}|${dv.id}`;
         const mapping = mapIndex[key];
         if (mapping && mapping.settingPayload) {
-          // Validate the setting is actually a Windows setting
-          const sid = (mapping.settingPayload.settingInstance?.settingDefinitionId || '').toLowerCase();
-          const isNonWindows = nonWindowsPrefixes.some(p => sid.startsWith(p));
-          if (isNonWindows) {
+          const sid = (mapping.settingPayload.settingInstance?.settingDefinitionId || '');
+          const isWindows = sid.toLowerCase().includes('_vendor_msft_');
+          if (!isWindows) {
             platformFilteredCount++;
             logLine('migration-log', `SKIP SETTING: "${sid}" is not a Windows setting (platform mismatch)`, 'warning');
             manifest.skipped.push({
