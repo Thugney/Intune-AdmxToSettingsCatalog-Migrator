@@ -195,8 +195,18 @@ export async function getSettingsCatalogPolicies() {
 }
 
 export async function createSettingsCatalogPolicy(name, description, settings = [], platform = 'windows10', technologies = 'mdm') {
-  // Filter out any null/undefined entries from settings
-  const validSettings = settings.filter(s => s && s.settingInstance);
+  // Filter out null/undefined entries and deduplicate by settingDefinitionId
+  const seen = new Set();
+  const validSettings = settings.filter(s => {
+    if (!s || !s.settingInstance) return false;
+    const id = s.settingInstance.settingDefinitionId;
+    if (seen.has(id)) {
+      console.warn(`[Graph] Skipping duplicate setting: ${id}`);
+      return false;
+    }
+    seen.add(id);
+    return true;
+  });
 
   const body = {
     '@odata.type': '#microsoft.graph.deviceManagementConfigurationPolicy',
@@ -218,23 +228,50 @@ export async function createSettingsCatalogPolicy(name, description, settings = 
   try {
     return await graphPost('/deviceManagement/configurationPolicies', body);
   } catch (err) {
-    // If creation with settings fails, try without settings then add them individually
-    if (err.message.includes('400') && validSettings.length > 0) {
-      console.warn('[Graph] Create with settings failed, retrying without settings:', err.message);
-      const policy = await graphPost('/deviceManagement/configurationPolicies', { ...body, settings: [] });
-
-      // Add settings one at a time via the settings relationship endpoint
-      for (const s of validSettings) {
-        try {
-          await graphPost(`/deviceManagement/configurationPolicies/${policy.id}/settings`, s);
-        } catch (settingErr) {
-          console.warn(`[Graph] Failed to add setting ${s.settingInstance?.settingDefinitionId}:`, settingErr.message);
-        }
-      }
-
-      return policy;
+    if (!err.message.includes('400') || validSettings.length === 0) {
+      throw err;
     }
-    throw err;
+
+    const inlineError = err.message;
+    console.warn('[Graph] Create with inline settings failed:', inlineError);
+    console.warn('[Graph] Fallback: creating policy without settings, then adding individually');
+
+    // Fallback: create the policy WITHOUT the settings property.
+    // The API rejects settings:[] ("Count is not >= 1") so we omit it entirely.
+    const { settings: _, ...bodyWithoutSettings } = body;
+
+    let policy;
+    try {
+      policy = await graphPost('/deviceManagement/configurationPolicies', bodyWithoutSettings);
+    } catch (createErr) {
+      // Both approaches failed — surface both errors so the user can diagnose
+      throw new Error(
+        `Failed to create policy. ` +
+        `Inline settings error: ${inlineError} | ` +
+        `Create-then-add error: ${createErr.message}`
+      );
+    }
+
+    // Add settings one at a time via the settings relationship endpoint
+    let added = 0;
+    const failures = [];
+    for (const s of validSettings) {
+      try {
+        await graphPost(`/deviceManagement/configurationPolicies/${policy.id}/settings`, s);
+        added++;
+      } catch (settingErr) {
+        const sid = s.settingInstance?.settingDefinitionId || 'unknown';
+        console.warn(`[Graph] Failed to add setting ${sid}:`, settingErr.message);
+        failures.push(sid);
+      }
+    }
+
+    console.log(`[Graph] Added ${added}/${validSettings.length} settings individually`);
+    if (failures.length > 0) {
+      console.warn(`[Graph] ${failures.length} settings failed to add:`, failures);
+    }
+
+    return policy;
   }
 }
 
