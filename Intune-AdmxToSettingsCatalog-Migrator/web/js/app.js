@@ -15,9 +15,9 @@ export const state = {
 
 // ==================== INITIALIZATION ====================
 document.addEventListener('DOMContentLoaded', () => {
-  // Restore state from sessionStorage
+  // Restore state from localStorage (persists across refresh and tab close)
   try {
-    const saved = sessionStorage.getItem('mk-app-state');
+    const saved = localStorage.getItem('mk-app-state');
     if (saved) {
       const parsed = JSON.parse(saved);
       Object.assign(state, parsed);
@@ -41,6 +41,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Landing page setup
   initLandingPage();
+
+  // Auto-restore session: if MSAL has a cached account, skip login screen
+  if (APP_CONFIG.isConfigured()) {
+    try {
+      const { currentAccount } = initMsal();
+      if (currentAccount) {
+        const tenantId = currentAccount.tenantId || '';
+        showApp(currentAccount, tenantId);
+      }
+    } catch {}
+  }
 });
 
 async function handleLogin() {
@@ -120,7 +131,7 @@ function showSetupModal() {
 
 function handleLogout() {
   logout();
-  sessionStorage.clear();
+  localStorage.removeItem('mk-app-state');
   document.getElementById('app-shell').classList.add('hidden');
   document.getElementById('login-screen').classList.add('hidden');
   const landing = document.getElementById('landing-page');
@@ -256,7 +267,7 @@ export function downloadJson(data, filename) {
 
 export function saveState() {
   try {
-    sessionStorage.setItem('mk-app-state', JSON.stringify(state));
+    localStorage.setItem('mk-app-state', JSON.stringify(state));
   } catch {}
 }
 
