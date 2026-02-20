@@ -266,14 +266,26 @@ async function runMigration(whatIf = false) {
         continue;
       }
 
+      // Deduplicate settings by settingDefinitionId before sending
+      const seenIds = new Set();
+      const uniqueSettings = settingsToAdd.filter(s => {
+        const id = s.settingInstance?.settingDefinitionId;
+        if (!id || seenIds.has(id)) return false;
+        seenIds.add(id);
+        return true;
+      });
+      if (uniqueSettings.length < settingsToAdd.length) {
+        logLine('migration-log', `Note: deduplicated ${settingsToAdd.length} → ${uniqueSettings.length} settings (removed ${settingsToAdd.length - uniqueSettings.length} duplicates)`, 'warning');
+      }
+
       if (whatIf) {
-        logLine('migration-log', `WOULD CREATE: "${targetName}" with ${settingsToAdd.length} settings (${unmappedCount} unmapped)`);
-        manifest.createdPolicies.push({ sourcePolicyId: policy.id, targetName, settingsCount: settingsToAdd.length, whatIf: true });
+        logLine('migration-log', `WOULD CREATE: "${targetName}" with ${uniqueSettings.length} settings (${unmappedCount} unmapped)`);
+        manifest.createdPolicies.push({ sourcePolicyId: policy.id, targetName, settingsCount: uniqueSettings.length, whatIf: true });
       } else {
-        logLine('migration-log', `CREATING: "${targetName}" with ${settingsToAdd.length} settings...`);
+        logLine('migration-log', `CREATING: "${targetName}" with ${uniqueSettings.length} settings...`);
         const desc = `${policy.description || ''}\n${marker}`.trim();
 
-        const newPolicy = await createSettingsCatalogPolicy(targetName, desc, settingsToAdd);
+        const newPolicy = await createSettingsCatalogPolicy(targetName, desc, uniqueSettings);
         logLine('migration-log', `Created policy: ${newPolicy.id}`);
 
         // Apply assignments
@@ -290,7 +302,7 @@ async function runMigration(whatIf = false) {
           sourcePolicyId: policy.id,
           targetPolicyId: newPolicy.id,
           targetName: newPolicy.name || targetName,
-          settingsCount: settingsToAdd.length,
+          settingsCount: uniqueSettings.length,
           assignmentCount: assignments.length
         });
 
