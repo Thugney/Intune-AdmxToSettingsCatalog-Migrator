@@ -127,16 +127,56 @@ export async function getAdmxDefinitionValues(policyId) {
 const _searchErrors = [];
 export function getSearchErrors() { return _searchErrors; }
 
-export async function searchSettingsCatalog(query) {
+// Known non-Windows setting ID prefixes. Settings starting with these are
+// macOS, iOS, or Android and must be excluded when migrating ADMX (Windows).
+const NON_WINDOWS_PREFIXES = [
+  'com.apple.',          // macOS / iOS
+  'ade_',                // Apple Device Enrollment
+  'appleosxconfiguration', // macOS configuration profiles
+  'ios_',                // iOS
+  'android',             // Android
+];
+
+// Check if a setting definition ID belongs to the Windows platform.
+// Windows SC IDs typically start with "device_vendor_msft_" or "user_vendor_msft_".
+function isWindowsSetting(settingId) {
+  if (!settingId) return false;
+  const id = settingId.toLowerCase();
+  for (const prefix of NON_WINDOWS_PREFIXES) {
+    if (id.startsWith(prefix)) return false;
+  }
+  return true;
+}
+
+// Filter search results to only include settings compatible with the given platform.
+function filterByPlatform(results, platform) {
+  if (!platform || platform !== 'windows10') return results;
+  return results.filter(r => {
+    const id = (r.id || '').toLowerCase();
+    // Exclude known non-Windows settings
+    if (!isWindowsSetting(id)) return false;
+    // If the result includes applicability info, also check that
+    if (r.applicability) {
+      const appStr = JSON.stringify(r.applicability).toLowerCase();
+      if (appStr.includes('macos') || appStr.includes('ios') || appStr.includes('android')) {
+        // Only exclude if it does NOT also mention windows
+        if (!appStr.includes('windows')) return false;
+      }
+    }
+    return true;
+  });
+}
+
+export async function searchSettingsCatalog(query, platform = 'windows10') {
   const safe = query.replace(/'/g, "''");
   let results = [];
 
   // Strategy 1: $filter with contains() on displayName (most reliable per MS docs)
   try {
     const r = await graphGet(
-      `/deviceManagement/configurationSettings?$filter=contains(displayName,'${safe}')&$top=25`
+      `/deviceManagement/configurationSettings?$filter=contains(displayName,'${safe}')&$top=50`
     );
-    results = r && r.value ? r.value : [];
+    results = filterByPlatform(r && r.value ? r.value : [], platform);
   } catch (e) {
     _searchErrors.push({ strategy: 'filter-displayName', query, error: e.message });
   }
@@ -148,9 +188,9 @@ export async function searchSettingsCatalog(query) {
   const idQuery = safe.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
   try {
     const r = await graphGet(
-      `/deviceManagement/configurationSettings?$filter=contains(id,'${idQuery}')&$top=25`
+      `/deviceManagement/configurationSettings?$filter=contains(id,'${idQuery}')&$top=50`
     );
-    results = r && r.value ? r.value : [];
+    results = filterByPlatform(r && r.value ? r.value : [], platform);
   } catch (e) {
     _searchErrors.push({ strategy: 'filter-id', query: idQuery, error: e.message });
   }
@@ -160,10 +200,10 @@ export async function searchSettingsCatalog(query) {
   // Strategy 3: $search with ConsistencyLevel header (may not be supported on all tenants)
   try {
     const r = await graphGet(
-      `/deviceManagement/configurationSettings?$search="${encodeURIComponent(query)}"&$top=25`,
+      `/deviceManagement/configurationSettings?$search="${encodeURIComponent(query)}"&$top=50`,
       { 'ConsistencyLevel': 'eventual' }
     );
-    results = r && r.value ? r.value : [];
+    results = filterByPlatform(r && r.value ? r.value : [], platform);
   } catch (e) {
     _searchErrors.push({ strategy: '$search', query, error: e.message });
   }
@@ -179,9 +219,9 @@ export async function searchSettingsCatalog(query) {
     const wordSafe = word.replace(/'/g, "''");
     try {
       const r = await graphGet(
-        `/deviceManagement/configurationSettings?$filter=contains(displayName,'${wordSafe}')&$top=25`
+        `/deviceManagement/configurationSettings?$filter=contains(displayName,'${wordSafe}')&$top=50`
       );
-      results = r && r.value ? r.value : [];
+      results = filterByPlatform(r && r.value ? r.value : [], platform);
     } catch (e) {
       _searchErrors.push({ strategy: 'filter-word', query: word, error: e.message });
     }
@@ -195,13 +235,18 @@ export async function getSettingsCatalogPolicies() {
 }
 
 export async function createSettingsCatalogPolicy(name, description, settings = [], platform = 'windows10', technologies = 'mdm') {
-  // Filter out null/undefined entries and deduplicate by settingDefinitionId
+  // Filter out null/undefined entries, deduplicate, and reject non-Windows settings
   const seen = new Set();
   const validSettings = settings.filter(s => {
     if (!s || !s.settingInstance) return false;
     const id = s.settingInstance.settingDefinitionId;
     if (seen.has(id)) {
       console.warn(`[Graph] Skipping duplicate setting: ${id}`);
+      return false;
+    }
+    // Platform safety: reject settings that clearly belong to other platforms
+    if (platform === 'windows10' && !isWindowsSetting(id)) {
+      console.warn(`[Graph] Rejecting non-Windows setting: ${id}`);
       return false;
     }
     seen.add(id);
@@ -234,6 +279,17 @@ export async function createSettingsCatalogPolicy(name, description, settings = 
 
     const inlineError = err.message;
     console.warn('[Graph] Create with inline settings failed:', inlineError);
+
+    // Check for platform mismatch errors before attempting fallback
+    if (inlineError.includes('applicability') && inlineError.includes('does not match')) {
+      console.error('[Graph] Platform mismatch detected — settings belong to a different platform than the policy');
+      throw new Error(
+        `Platform mismatch: One or more settings are for a different platform (e.g., macOS) ` +
+        `but the policy targets Windows. Re-run the mapping to fix incorrect matches. ` +
+        `Original error: ${inlineError}`
+      );
+    }
+
     console.warn('[Graph] Fallback: creating policy without settings, then adding individually');
 
     // Fallback: create the policy WITHOUT the settings property.
