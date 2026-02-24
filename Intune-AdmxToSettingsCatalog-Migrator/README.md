@@ -4,9 +4,11 @@
 
 [![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-blue.svg)](https://github.com/PowerShell/PowerShell)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)]()
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-eriteach-blue?logo=linkedin)](https://linkedin.com/in/eriteach)
-[![X](https://img.shields.io/badge/X-eriteach-black?logo=x)](https://x.com/eriteach)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub](https://img.shields.io/badge/GitHub-Thugney-181717?style=flat&logo=github)](https://github.com/Thugney)
+[![Blog](https://img.shields.io/badge/Blog-eriteach.com-0d9488?style=flat&logo=hugo)](https://blog.eriteach.com)
+[![YouTube](https://img.shields.io/badge/YouTube-Eriteach-FF0000?style=flat&logo=youtube)](https://www.youtube.com/@eriteach)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Eriteach-0A66C2?style=flat&logo=linkedin)](https://www.linkedin.com/in/eriteach/)
 
 Microsoft is phasing out Administrative Templates (ADMX) in favor of the unified Settings Catalog. This tool provides an automated, auditable, and rollback-capable migration path—eliminating the error-prone manual recreation of policies.
 
@@ -418,7 +420,10 @@ Contributions are welcome! Please feel free to submit issues or pull requests.
 
 **Eric Thugney**
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-eriteach-blue?logo=linkedin)](https://linkedin.com/in/eriteach) [![X](https://img.shields.io/badge/X-eriteach-black?logo=x)](https://x.com/eriteach)
+[![GitHub](https://img.shields.io/badge/GitHub-Thugney-181717?style=flat&logo=github)](https://github.com/Thugney)
+[![Blog](https://img.shields.io/badge/Blog-eriteach.com-0d9488?style=flat&logo=hugo)](https://blog.eriteach.com)
+[![YouTube](https://img.shields.io/badge/YouTube-Eriteach-FF0000?style=flat&logo=youtube)](https://www.youtube.com/@eriteach)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Eriteach-0A66C2?style=flat&logo=linkedin)](https://www.linkedin.com/in/eriteach/)
 
 ---
 
