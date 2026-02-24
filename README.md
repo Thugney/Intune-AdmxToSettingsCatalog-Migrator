@@ -1,8 +1,11 @@
 # Intune ADMX to Settings Catalog Migrator
 
-[![GitHub](https://img.shields.io/badge/GitHub-Thugney-181717?style=for-the-badge&logo=github)](https://github.com/Thugney)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-eriteach-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/eriteach)
-[![X](https://img.shields.io/badge/X-@eriteach-000000?style=for-the-badge&logo=x)](https://x.com/eriteach)
+[![GitHub](https://img.shields.io/badge/GitHub-Thugney-181717?style=flat&logo=github)](https://github.com/Thugney)
+[![Blog](https://img.shields.io/badge/Blog-eriteach.com-0d9488?style=flat&logo=hugo)](https://blog.eriteach.com)
+[![YouTube](https://img.shields.io/badge/YouTube-Eriteach-FF0000?style=flat&logo=youtube)](https://www.youtube.com/@eriteach)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Eriteach-0A66C2?style=flat&logo=linkedin)](https://www.linkedin.com/in/eriteach/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 
 Microsoft is deprecating Administrative Templates (ADMX) in Intune. This tool automates the migration to Settings Catalog policies — handling export, duplicate detection, mapping, migration, backup, and rollback.
 
