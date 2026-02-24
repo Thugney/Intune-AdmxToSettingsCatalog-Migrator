@@ -131,6 +131,6 @@ See the full [project README](Intune-AdmxToSettingsCatalog-Migrator/README.md) f
 
 ## Connect
 
-Built by [Robel](https://www.linkedin.com/in/eriteach).
+Built by [Robel] [![LinkedIn](https://img.shields.io/badge/LinkedIn-Eriteach-0A66C2?style=flat&logo=linkedin)](https://www.linkedin.com/in/eriteach/).
 
-[![LinkedIn](https://img.shields.io/badge/Connect_on_LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/eriteach)
+
