@@ -418,7 +418,7 @@ Contributions are welcome! Please feel free to submit issues or pull requests.
 
 ## Author
 
-**Eric Thugney**
+**Thugney**
 
 [![GitHub](https://img.shields.io/badge/GitHub-Thugney-181717?style=flat&logo=github)](https://github.com/Thugney)
 [![Blog](https://img.shields.io/badge/Blog-eriteach.com-0d9488?style=flat&logo=hugo)](https://blog.eriteach.com)
