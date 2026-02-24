@@ -1,62 +1,65 @@
-[![Repo](https://img.shields.io/badge/Repo-Intune--ADMX--Migrator-2088FF?style=for-the-badge&logo=github)](https://github.com/Thugney/Intune-AdmxToSettingsCatalog-Migrator)
-
 # Intune ADMX to Settings Catalog Migrator
 
-[![GitHub](https://img.shields.io/badge/GitHub-Thugney-181717?style=for-the-badge&logo=github)](https://github.com/Thugney/)
+[![GitHub](https://img.shields.io/badge/GitHub-Thugney-181717?style=for-the-badge&logo=github)](https://github.com/Thugney)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-eriteach-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/eriteach)
 [![X](https://img.shields.io/badge/X-@eriteach-000000?style=for-the-badge&logo=x)](https://x.com/eriteach)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-eriteach-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/eriteach/)
 
-Automates migration of **Administrative Templates** (ADMX) to **Settings Catalog** policies in Microsoft Intune.
+Microsoft is deprecating Administrative Templates (ADMX) in Intune. This tool automates the migration to Settings Catalog policies — handling export, duplicate detection, mapping, migration, backup, and rollback.
 
-Microsoft has deprecated Administrative Templates. This tool handles the full migration workflow: export, duplicate detection, mapping, migration, backup, and rollback.
+---
 
-## Screenshots
+## How It Works
 
-![Landing Page](docs/screenshots/landing.png)
+The migration follows a structured pipeline. Each step builds on the previous one.
 
-![Login](docs/screenshots/login.png)
+```
+Export ─> Duplicates ─> Mapping ─> Migrate ─> Validate
+                                       │
+                                       └── Rollback (if needed)
+```
 
-![Dashboard](docs/screenshots/dashboard.png)
+| Step | What happens |
+|------|-------------|
+| **Export** | Reads all ADMX policies from your tenant via Microsoft Graph, including settings, assignments, and definition metadata |
+| **Duplicates** | Analyzes exported policies for overlapping or conflicting settings across policies. Flags conflicts and suggests merge candidates |
+| **Mapping** | Searches the Settings Catalog for each ADMX setting and suggests the closest match. Supports localized tenants (Norwegian, German, etc.) via product-aware search |
+| **Migrate** | Creates new Settings Catalog policies from your reviewed mapping. Copies assignments. Supports dry-run preview before committing |
+| **Rollback** | Deletes only the policies this tool created (tracked via embedded markers). Does not touch your original ADMX policies |
+| **Backup / Restore** | Automatic snapshots before every migration and rollback. Manual backup and restore also available |
+
+---
 
 ## Two Ways to Use
 
 ### Web UI (Browser-Based)
 
-A fully client-side web app that runs in your browser. No PowerShell required — just a local web server.
+A fully client-side SPA that runs in your browser. Authenticates via MSAL.js popup — no secrets stored, no backend server. All data stays in your browser.
 
-You need a local HTTP server to serve the files (opening `index.html` directly won't work due to browser security restrictions). **You must serve from the `web` folder** — not the repo root, or you'll see a directory listing instead of the app.
+You need a local HTTP server to serve the files. **Serve from the `web/` folder**, not the repo root.
 
-After cloning, the folder structure looks like this:
 ```
-Intune-AdmxToSettingsCatalog-Migrator/          ← repo root
-└── Intune-AdmxToSettingsCatalog-Migrator/      ← project folder
-    └── web/                                     ← serve from HERE
+Intune-AdmxToSettingsCatalog-Migrator/          <-- repo root
+└── Intune-AdmxToSettingsCatalog-Migrator/
+    └── web/                                     <-- serve from HERE
         ├── index.html
         ├── css/
         └── js/
 ```
 
-Pick any option below to start the server:
-
-**Python** (install from [python.org](https://www.python.org/downloads/) or `winget install Python.Python.3`):
+**Python:**
 ```bash
-# From the repo root:
 cd Intune-AdmxToSettingsCatalog-Migrator/web
 python -m http.server 8080
 # Open http://localhost:8080
 ```
 
-> **Windows note:** Use `python` not `python3`. If you get a Microsoft Store redirect, disable the Python app execution aliases in **Settings > Apps > Advanced app settings > App execution aliases**.
-
-**npx** (if you have Node.js installed):
+**Node.js:**
 ```bash
-# From the repo root:
 npx http-server Intune-AdmxToSettingsCatalog-Migrator/web -p 8080
 ```
 
-**PowerShell** (no extra install needed):
+**PowerShell:**
 ```powershell
-# From the repo root:
 cd Intune-AdmxToSettingsCatalog-Migrator/web
 Start-Process "http://localhost:8080"
 $listener = [System.Net.HttpListener]::new(); $listener.Prefixes.Add("http://localhost:8080/"); $listener.Start()
@@ -65,39 +68,66 @@ while ($listener.IsListening) { $ctx = $listener.GetContext(); $file = Join-Path
 
 ### PowerShell CLI
 
-Full migration workflow from the command line with certificate, client secret, or interactive auth.
+Full migration workflow from the command line. Supports certificate, client secret, or interactive (device code) authentication.
 
 ```powershell
-# From the repo root:
 cd Intune-AdmxToSettingsCatalog-Migrator
 pwsh ./Invoke-Migration.ps1 -ConfigPath ./config/config.json -Mode Export
 ```
 
+---
+
 ## Prerequisites
 
-Both the Web UI and PowerShell CLI require an **Entra ID (Azure AD) app registration**. This is what gives you the Tenant ID and Client ID you'll be asked for.
+Both the Web UI and PowerShell CLI require an **Entra ID (Azure AD) app registration**.
 
-**See the full [app registration setup guide](Intune-AdmxToSettingsCatalog-Migrator/README.md#entra-id-app-registration-setup) in the project README.**
-
-Quick summary:
 1. Create an app registration in the [Entra admin center](https://entra.microsoft.com)
-2. Add `DeviceManagementConfiguration.ReadWrite.All` Graph API permission and grant admin consent
-3. For the Web UI: add a **SPA redirect URI** (`http://localhost:8080`) under Authentication
-4. For the PowerShell CLI: add a client secret, certificate, or enable public client flows for interactive login
+2. Add **`DeviceManagementConfiguration.ReadWrite.All`** (Microsoft Graph, Application) and grant admin consent
+3. **Web UI**: Add a SPA redirect URI (`http://localhost:8080`) under Authentication
+4. **PowerShell CLI**: Add a client secret, upload a certificate, or enable public client flows for interactive login
+
+See the full [app registration setup guide](Intune-AdmxToSettingsCatalog-Migrator/README.md#entra-id-app-registration-setup) for step-by-step instructions.
+
+---
 
 ## Requirements
 
-- **Web UI**: Any modern browser + a local HTTP server (Python, Node.js, or PowerShell)
-- **PowerShell CLI**: PowerShell 7+
-- **Both**: Entra ID app registration with Graph API permissions ([setup guide](Intune-AdmxToSettingsCatalog-Migrator/README.md#entra-id-app-registration-setup))
+| Component | What you need |
+|-----------|--------------|
+| **Web UI** | Any modern browser + local HTTP server (Python, Node.js, or PowerShell) |
+| **PowerShell CLI** | PowerShell 7+ |
+| **Both** | Entra ID app registration with Graph API permissions |
+
+---
+
+## Limitations
+
+- **Not every ADMX setting has a Settings Catalog equivalent.** The mapping step highlights unmapped settings so you know what needs manual attention.
+- **Localized tenants** (Norwegian, German, etc.) may return fewer automatic matches. The tool uses product-aware fallback search, but some settings may require manual mapping via the search modal.
+- **Settings Catalog search depends on Microsoft Graph indexing.** There can be slight delays before newly created definitions are searchable.
+- **Original ADMX policies are not modified or deleted.** You must decommission them manually after validating the migration.
+- **Token lifetime.** For very large tenants with hundreds of policies, the auth token may expire mid-operation. Run in batches if needed.
+- **Certificate auth requires PowerShell 7+** for the RSA signing APIs.
+- **Interactive auth uses delegated permissions**, scoped to the signed-in user's Intune access level.
+
+---
 
 ## Documentation
 
-See the full [README](Intune-AdmxToSettingsCatalog-Migrator/README.md) inside the project folder for:
-- Entra ID app registration setup (step-by-step)
-- Authentication methods (client secret, certificate, interactive)
-- Step-by-step workflow guide
-- Duplicate detection and resolution
-- Backup and restore
-- Troubleshooting
+See the full [project README](Intune-AdmxToSettingsCatalog-Migrator/README.md) for:
 
+- Entra ID app registration setup (step-by-step with screenshots)
+- Authentication methods (client secret, certificate, interactive)
+- Recommended workflow
+- Duplicate detection and conflict resolution
+- Backup and restore
+- Configuration reference
+- Troubleshooting guide
+
+---
+
+## Connect
+
+Built by [Robel](https://www.linkedin.com/in/eriteach).
+
+[![LinkedIn](https://img.shields.io/badge/Connect_on_LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/eriteach)
