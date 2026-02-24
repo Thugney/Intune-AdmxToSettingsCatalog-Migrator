@@ -1,36 +1,35 @@
-# Intune ADMX (Administrative Templates) -> Settings Catalog Migrator
+# Intune ADMX to Settings Catalog Migrator
 
-Automates migration of **Administrative Templates** (Graph: `groupPolicyConfigurations`) to **Settings Catalog** (Graph: `configurationPolicies`) in Microsoft Intune.
+**Automate the migration of Administrative Templates to Settings Catalog in Microsoft Intune.**
 
----
+[![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-blue.svg)](https://github.com/PowerShell/PowerShell)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)]()
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-eriteach-blue?logo=linkedin)](https://linkedin.com/in/eriteach)
+[![X](https://img.shields.io/badge/X-eriteach-black?logo=x)](https://x.com/eriteach)
 
-## Why
+Microsoft is phasing out Administrative Templates (ADMX) in favor of the unified Settings Catalog. This tool provides an automated, auditable, and rollback-capable migration path—eliminating the error-prone manual recreation of policies.
 
-- Administrative Templates profiles are being phased out in favor of the unified Settings Catalog model.
-- Manual recreation across dozens of policies is error-prone and time-consuming.
-- This tool provides an auditable, repeatable, rollback-capable migration path.
+## Key Features
 
-## What It Does
-
-| Mode | Description |
-|------|-------------|
-| **Export** | Exports all ADMX policies, settings, and assignments to JSON |
-| **Map** | Auto-suggests Settings Catalog counterparts for each ADMX setting |
-| **Migrate** | Creates Settings Catalog policies from your curated mapping (supports `-WhatIf`) |
-| **Rollback** | Deletes only the policies this tool created (marker-based) |
-| **Duplicates** | Detects duplicate/conflicting settings across ADMX policies |
-| **Backup** | Snapshots current ADMX and Settings Catalog state before changes |
-| **Restore** | Lists and restores local artifact files from a backup |
+- **Export** — Export all ADMX policies, settings, and assignments to JSON
+- **Smart Mapping** — Auto-suggest Settings Catalog equivalents for each ADMX setting
+- **Duplicate Detection** — Identify conflicting settings across policies before migration
+- **Safe Migration** — Preview changes with `-WhatIf` before committing
+- **Rollback Support** — Instantly revert changes using marker-based tracking
+- **Backup & Restore** — Point-in-time snapshots before every operation
+- **Web UI Included** — Browser-based dashboard with real-time progress (no server required)
 
 ---
 
 ## Requirements
 
-- **PowerShell 7+** (cross-platform) — for the CLI
-- **An Entra ID (Azure AD) App Registration** — see setup guide below
-- **Microsoft Graph API permissions** on the app registration:
-  - `DeviceManagementConfiguration.Read.All` (export, duplicates)
-  - `DeviceManagementConfiguration.ReadWrite.All` (migrate, assign, rollback)
+| Requirement | Details |
+|-------------|---------|
+| **PowerShell** | Version 7+ (cross-platform) |
+| **Entra ID App Registration** | See setup guide below |
+| **Graph API Permissions** | `DeviceManagementConfiguration.Read.All` (read-only) |
+| | `DeviceManagementConfiguration.ReadWrite.All` (migration) |
 
 ---
 
@@ -151,65 +150,27 @@ When you run the tool, it displays a URL and code. Open the URL in a browser, en
 
 ## Quick Start
 
-### 1. Configure
-
-Copy `config\config.sample.json` to `config\config.json` and fill in your tenant values:
-
 ```powershell
+# 1. Configure
 Copy-Item .\config\config.sample.json .\config\config.json
 # Edit config.json with your TenantId, ClientId, and Auth details
-```
 
-### 2. Export ADMX Policies
-
-```powershell
+# 2. Export current ADMX policies
 pwsh .\Invoke-Migration.ps1 -ConfigPath .\config\config.json -Mode Export
-```
 
-### 3. Detect Duplicates (Recommended)
-
-Before migrating, check for duplicate or conflicting settings across your ADMX policies:
-
-```powershell
+# 3. Detect duplicates and conflicts (recommended)
 pwsh .\Invoke-Migration.ps1 -ConfigPath .\config\config.json -Mode Duplicates
-```
 
-This produces two files:
-- `output\duplicate-report.json` - Machine-readable report with full analysis
-- `output\duplicate-report.txt` - Human-readable summary
-
-The report shows:
-- **Consistent duplicates**: Same setting enabled in multiple policies (safe to merge)
-- **Conflicts**: Same setting configured differently across policies (needs manual review)
-- **Merge candidates**: Policy pairs that share settings, ranked by overlap count
-- **Recommendations**: Whether each pair can be auto-merged or needs review
-
-### 4. Build Mapping Suggestions
-
-```powershell
+# 4. Generate mapping suggestions
 pwsh .\Invoke-Migration.ps1 -ConfigPath .\config\config.json -Mode Map
-```
 
-Review `output\mapping.suggestions.json`, then create `output\mapping.json` with your curated mappings. See `output\mapping.json` for the expected format.
-
-### 5. Preview Migration
-
-```powershell
+# 5. Preview migration (dry run)
 pwsh .\Invoke-Migration.ps1 -ConfigPath .\config\config.json -Mode Migrate -WhatIf
-```
 
-### 6. Run Migration
-
-```powershell
+# 6. Execute migration (auto-backup included)
 pwsh .\Invoke-Migration.ps1 -ConfigPath .\config\config.json -Mode Migrate
-```
 
-A backup is automatically created before migration runs.
-
-### 7. Rollback (if needed)
-
-```powershell
-pwsh .\Invoke-Migration.ps1 -ConfigPath .\config\config.json -Mode Rollback -WhatIf
+# 7. Rollback if needed
 pwsh .\Invoke-Migration.ps1 -ConfigPath .\config\config.json -Mode Rollback
 ```
 
@@ -440,10 +401,27 @@ All data stays in your browser (sessionStorage/localStorage). No data is sent to
 
 ## Limitations
 
-- Not every ADMX setting has a 1:1 Settings Catalog counterpart. The mapping report highlights unmapped settings.
-- The `$search` endpoint for Settings Catalog requires `ConsistencyLevel=eventual` and may have indexing delays.
-- Certificate authentication requires PowerShell 7+ for the RSA signing APIs.
-- The tool does not modify or delete original ADMX policies. That must be done manually after validation.
-- Token does not auto-refresh during very long operations. For large tenants, consider running in batches.
-- Interactive auth uses delegated permissions, which are scoped to the signed-in user's access level.
-- Web UI requires a SPA redirect URI configured in your app registration.
+- Not every ADMX setting has a 1:1 Settings Catalog counterpart (unmapped settings are highlighted)
+- Original ADMX policies are not modified or deleted—manual cleanup after validation
+- Token does not auto-refresh during very long operations; consider batching for large tenants
+- Web UI requires a SPA redirect URI in your app registration
+
+---
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues or pull requests.
+
+---
+
+## Author
+
+**Eric Thugney**
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-eriteach-blue?logo=linkedin)](https://linkedin.com/in/eriteach) [![X](https://img.shields.io/badge/X-eriteach-black?logo=x)](https://x.com/eriteach)
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
