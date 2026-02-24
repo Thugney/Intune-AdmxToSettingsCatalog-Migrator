@@ -128,6 +128,6 @@ See the full [project README](Intune-AdmxToSettingsCatalog-Migrator/README.md) f
 
 ## Connect
 
-Built by [Eric Thugney](https://www.linkedin.com/in/eriteach).
+Built by [Robel](https://www.linkedin.com/in/eriteach).
 
 [![LinkedIn](https://img.shields.io/badge/Connect_on_LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/eriteach)
